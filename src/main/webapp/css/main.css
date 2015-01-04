@@ -1,0 +1,12 @@
+div.column {
+    display: inline-block;
+    vertical-align: top;
+}
+
+div.column-1 {
+    width: 200px;
+}
+
+canvas#field {
+    border: 1px solid black;
+}
