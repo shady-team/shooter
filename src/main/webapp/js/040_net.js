@@ -4,7 +4,7 @@ module('net', ['util', 'events'], function (util, events) {
         /** @const */ E_ACCEPT = 'accept',
         /** @const */ E_REJECT = 'reject',
 
-        /** @const */ ICE_SERVERS = [{url: "stun:stun.l.google.com:19302"}];
+        /** @const */ ICE_SERVERS = [{'url': "stun:stun.l.google.com:19302"}];
 
     /**
      * @param {string} url
@@ -126,10 +126,10 @@ module('net', ['util', 'events'], function (util, events) {
     WebRTC.prototype.sendOffer = function (peerId) {
         var observer = this._observer;
         var pc = createPeerConnection.call(this, peerId);
-        var channel = pc.createDataChannel("dc-" + peerId, {ordered: false, maxRetransmits: 0});
+        var channel = pc.createDataChannel("dc-" + peerId, {'ordered': false, 'maxRetransmits': 0});
         pc.createOffer(function (desc) {
             pc.setLocalDescription(desc, function () {
-                observer.send(E_OFFER, {id: peerId, description: desc});
+                observer.send(E_OFFER, {'id': peerId, 'description': desc});
             }, function (err) {
                 util.logger.log('Failed to setLocalDescription():', err);
             });
@@ -156,7 +156,7 @@ module('net', ['util', 'events'], function (util, events) {
 
                 function rejectOnError(err) {
                     util.logger.log(err);
-                    observer.send(E_REJECT, {id: id, reason: 'Error occurred'});
+                    observer.send(E_REJECT, {'id': id, 'reason': 'Error occurred'});
                     pc.close();
                 }
 
@@ -167,13 +167,13 @@ module('net', ['util', 'events'], function (util, events) {
                 pc.setRemoteDescription(new RTCSessionDescription(offer.description), function () {
                     pc.createAnswer(function (desc) {
                         pc.setLocalDescription(desc, function () {
-                            observer.send(E_ACCEPT, {id: id, description: desc});
+                            observer.send(E_ACCEPT, {'id': id, 'description': desc});
                         }, rejectOnError);
                     }, rejectOnError);
                 }, rejectOnError);
                 self._peerConnections[id] = pc;
             }, function (reason) {
-                observer.send(E_REJECT, {id: id, reason: reason});
+                observer.send(E_REJECT, {'id': id, 'reason': reason});
             });
         });
 
@@ -212,13 +212,13 @@ module('net', ['util', 'events'], function (util, events) {
      */
     function createPeerConnection(id) {
         var observer = this._observer,
-            config = {iceServers: ICE_SERVERS},
+            config = {'iceServers': ICE_SERVERS},
             peerConnection = new RTCPeerConnection(config);
 
         peerConnection.onicecandidate = function (evt) {
             var candidate = evt.candidate;
             if (candidate) {
-                observer.send(E_ICE, {id: id, candidate: candidate});
+                observer.send(E_ICE, {'id': id, 'candidate': candidate});
                 peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
             }
         };
