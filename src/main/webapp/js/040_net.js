@@ -1,58 +1,128 @@
-(function (exports) {
-    var E_ICE = 'ice',
-        E_OFFER = 'offer',
-        E_ACCEPT = 'accept',
-        E_REJECT = 'reject',
+module('net', ['util', 'events'], function (util, events) {
+    var /** @const */ E_ICE = 'ice',
+        /** @const */ E_OFFER = 'offer',
+        /** @const */ E_ACCEPT = 'accept',
+        /** @const */ E_REJECT = 'reject',
 
-        ICE_SERVERS = [{url: "stun:stun.l.google.com:19302"}];
+        /** @const */ ICE_SERVERS = [{url: "stun:stun.l.google.com:19302"}];
 
+    /**
+     * @param {string} url
+     * @constructor
+     */
     function Observer(url) {
-        var ws = new WebSocket(url);
-        ws.onopen = _onopen.bind(this);
-        ws.onerror = _onerror.bind(this);
-        ws.onclose = _onclose.bind(this);
-        ws.onmessage = _onmessage.bind(this);
-        this._ws = ws;
+        this._ws = new WebSocket(url);
+        /**
+         * @type {Object<string,function(*)>}
+         * @private
+         */
         this._on = {};
+        /**
+         * @type {?function(Event)}
+         */
+        this.onOpen = null;
+        /**
+         * @type {?function(Event)}
+         */
+        this.onClose = null;
+        initObserverEvents.call(this);
     }
 
-    function _onopen(evt) {
+    /**
+     * @this {Observer}
+     */
+    function initObserverEvents() {
+        var ws = this._ws;
+        ws.onopen = wsOpen.bind(this);
+        ws.onerror = wsError.bind(this);
+        ws.onclose = wsClose.bind(this);
+        ws.onmessage = wsMessage.bind(this);
+    }
+
+    /**
+     * @this {Observer}
+     * @param {Event} evt
+     */
+    function wsOpen(evt) {
         this.onOpen && this.onOpen(evt);
     }
 
-    function _onerror(evt) {
-        console.log("observing connection establishment failed", evt);
+    /**
+     * @this {Observer}
+     * @param {Event} evt
+     */
+    function wsError(evt) {
+        util.logger.log("observing connection establishment failed", evt);
     }
 
-    function _onclose(evt) {
+    /**
+     * @this {Observer}
+     * @param {Event} evt
+     */
+    function wsClose(evt) {
         this.onClose && this.onClose(evt);
     }
 
-    function _onmessage(message) {
-        var parts = message.data.split("\n\n", 2);
-        var type = parts[0];
-        var content = parts[1];
-        type in this._on && this._on[type].call(this, JSON.parse(content));
+    /**
+     * @this {Observer}
+     * @param {MessageEvent<?>} message
+     */
+    function wsMessage(message) {
+        var parts = message.data.split("\n\n", 2),
+            type = parts[0],
+            content = parts[1];
+        this._on[type] && this._on[type].call(this, JSON.parse(content));
     }
 
+    /**
+     * @param {string} type
+     * @param {function(*)} handler
+     */
     Observer.prototype.on = function (type, handler) {
         this._on[type] = handler;
     };
 
+    /**
+     * @param {string} type
+     * @param {*} message
+     */
     Observer.prototype.send = function (type, message) {
         this._ws.send(type + "\n\n" + JSON.stringify(message));
     };
 
+    /**
+     * @param {Observer} observer
+     * @constructor
+     * @extends {WithEvents}
+     */
     function WebRTC(observer) {
         this._observer = observer;
+        /**
+         * @type {Object<string, RTCPeerConnection>}
+         * @private
+         */
         this._peerConnections = {};
+        /**
+         * @type {Object<string, RTCDataChannel>}
+         * @private
+         */
         this._dataChannels = {};
         initSubscriptions.call(this);
 
-        // reject all by default
+        /**
+         * reject all by default
+         * @param {*} offer
+         * @param {function()} accept
+         * @param {function(string=)} reject
+         */
         this.onIncomingConnection = function (offer, accept, reject) { reject(); };
     }
 
+    WebRTC.prototype = new events.WithEvents();
+
+    /**
+     * @param {string} peerId
+     */
     WebRTC.prototype.sendOffer = function (peerId) {
         var observer = this._observer;
         var pc = createPeerConnection.call(this, peerId);
@@ -61,10 +131,10 @@
             pc.setLocalDescription(desc, function () {
                 observer.send(E_OFFER, {id: peerId, description: desc});
             }, function (err) {
-                console.log('Failed to setLocalDescription():', err);
+                util.logger.log('Failed to setLocalDescription():', err);
             });
         }, function (err) {
-            console.log('Failed to createOffer():', err);
+            util.logger.log('Failed to createOffer():', err);
         });
         this._peerConnections[peerId] = pc;
         this._dataChannels[peerId] = channel;
@@ -85,7 +155,7 @@
                 var pc = createPeerConnection.call(self, id);
 
                 function rejectOnError(err) {
-                    console.log(err);
+                    util.logger.log(err);
                     observer.send(E_REJECT, {id: id, reason: 'Error occurred'});
                     pc.close();
                 }
@@ -111,35 +181,39 @@
             var id = accept.id;
             if (id in self._peerConnections) {
                 var pc = self._peerConnections[id];
-                var dc = self._dataChannels[id];
                 pc.setRemoteDescription(new RTCSessionDescription(accept.description), function () {}, function (err) {
-                    console.log("Failed to setRemoteDescription():", err);
+                    util.logger.log("Failed to setRemoteDescription():", err);
                     pc.close();
                 });
             }
         });
 
         observer.on(E_REJECT, function (reject) {
-            var id = reject.id;
-            if (id in self._peerConnections) {
-                self._peerConnections[id].close();
+            var id = reject.id,
+                pc = self._peerConnections[id];
+            if (pc) {
+                pc.close();
                 self.onOfferRejected && self.onOfferRejected(reject);
             }
         });
 
         observer.on(E_ICE, function (ice) {
-            if (ice.id in self._peerConnections)
-                self._peerConnections[ice.id].addIceCandidate(new RTCIceCandidate(ice.candidate));
+            var id = ice.id,
+                pc = self._peerConnections[id];
+            if (pc)
+                pc.addIceCandidate(new RTCIceCandidate(ice.candidate));
         });
     }
 
     /**
      * @this {WebRTC}
+     * @param {string} id
+     * @return {RTCPeerConnection}
      */
     function createPeerConnection(id) {
-        var observer = this._observer;
-        var config = {iceServers: ICE_SERVERS};
-        var peerConnection = new RTCPeerConnection(config);
+        var observer = this._observer,
+            config = {iceServers: ICE_SERVERS},
+            peerConnection = new RTCPeerConnection(config);
 
         peerConnection.onicecandidate = function (evt) {
             var candidate = evt.candidate;
@@ -152,28 +226,27 @@
         return peerConnection;
     }
 
-    function fireEvent(event, id, arg) {
-        event in this && this[event].call(this, id, arg);
-    }
-
     /**
      * @this {WebRTC}
      */
     function initDataChannelHandlers(id) {
-        var dc = this._dataChannels[id];
-        var self = this;
+        var dc = this._dataChannels[id],
+            self = this;
 
-        dc.onopen = fireEvent.bind(this, 'onOpen', id);
-        dc.onclose = function () {
+        dc.onopen = this.fire.bind(this, events.E_OPEN, id);
+        dc.onclose = function (evt) {
             self.closeConnection(id);
-            fireEvent.call(self, 'onClose', id);
+            self.fire(events.E_CLOSE, id, evt);
         };
-        dc.onerror = fireEvent.bind(this, 'onError', id);
+        dc.onerror = this.fire.bind(this, events.E_ERROR, id);
         dc.onmessage = function (event) {
-            fireEvent.call(self, 'onMessage', id, event.data);
+            self.fire(events.E_MESSAGE, id, event.data);
         };
     }
 
+    /**
+     * @param {string} id
+     */
     WebRTC.prototype.closeConnection = function (id) {
         if (id in this._peerConnections) {
             this._peerConnections[id].close();
@@ -183,6 +256,10 @@
         }
     };
 
+    /**
+     * @param {string} id
+     * @param {string} data
+     */
     WebRTC.prototype.send = function (id, data) {
         if (!(id in this._dataChannels)) {
             throw new Error("No such id");
@@ -190,6 +267,8 @@
         this._dataChannels[id].send(data);
     };
 
-    exports.Observer = Observer;
-    exports.WebRTC = WebRTC;
-})(window);
+    return {
+        Observer: Observer,
+        WebRTC: WebRTC
+    };
+});

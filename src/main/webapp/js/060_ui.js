@@ -1,6 +1,6 @@
-(function () {
-    var observer, webRtc, server;
-    var field = document.getElementById("field"),
+module('ui', ['net', 'game', 'events'], function (net, game, events) {
+    var observer, webRtc, server,
+        field = document.getElementById("field"),
         loginForm = document.getElementById("login-form"),
         postLogin = document.getElementById("post-login"),
         peerList = document.getElementById("peers"),
@@ -9,9 +9,9 @@
         evt.preventDefault();
 
         var nickname = document.getElementById("nickname").value;
-        observer = new Observer("ws://" + location.host + "/observer?nickname=" + encodeURI(nickname));
+        observer = new net.Observer("ws://" + location.host + "/observer?nickname=" + encodeURI(nickname));
         observer.onOpen = function () {
-            webRtc = new WebRTC(this);
+            webRtc = new net.WebRTC(this);
             webRtc.onIncomingConnection = function (offer, accept, reject) {
                 if (confirm(offer.id + " is offering connection.\nAccept?")) {
                     accept();
@@ -19,9 +19,9 @@
                     reject('User rejected');
                 }
             };
-            webRtc.onOpen = function (id) {
-                new GameClient(new RemoteServer(new WebRTCConnectorAdapter(webRtc), id), field);
-            }
+            webRtc.on(events.E_OPEN, function (id) {
+                new game.GameClient(new game.RemoteServer(new game.WebRTCConnectorAdapter(webRtc), id), field);
+            });
         };
         observer.on("peers", function (data) {
             updatePeerList(data);
@@ -38,11 +38,11 @@
     function updatePeerList(peers) {
         if (server) {
             peerList.innerHTML = peers.reduce(function (prev, peer) {
-                return prev + "<li>" + peer.nickname + "@" + peer.id + ' <button data-peer-id="' + peer.id + '">Invite</button></li>';
+                return prev + "<li>" + peer['nickname'] + "@" + peer['id'] + ' <button data-peer-id="' + peer.id + '">Invite</button></li>';
             }, "");
         } else {
             peerList.innerHTML = peers.reduce(function (prev, peer) {
-                return prev + "<li>" + peer.nickname + "@" + peer.id + "</li>";
+                return prev + "<li>" + peer['nickname'] + "@" + peer['id'] + "</li>";
             }, "");
         }
     }
@@ -50,11 +50,11 @@
     function updateHostList(hosts) {
         if (server) {
             hostList.innerHTML = hosts.reduce(function (prev, host) {
-                return prev + "<li>" + host.id + '</li>';
+                return prev + "<li>" + host['id'] + '</li>';
             }, "");
         } else {
             hostList.innerHTML = hosts.reduce(function (prev, host) {
-                return prev + "<li>" + host.id + ' <button data-host-id="' + host.id + '">Connect</button></li>';
+                return prev + "<li>" + host['id'] + ' <button data-host-id="' + host['id'] + '">Connect</button></li>';
             }, "");
         }
     }
@@ -82,8 +82,11 @@
 
     document.getElementById("host").addEventListener("click", function () {
         observer.send("host", {});
-        server = new GameServer(new WebRTCConnectorAdapter(webRtc));
+        webRtc.off(events.E_OPEN);
+        var connector = new game.WebRTCConnectorAdapter(webRtc);
+        server = new game.GameServer(connector);
+        new game.GameClient(new game.LocalServer(connector), field);
         requestLists();
         this.disabled = true;
     });
-})();
+});

@@ -3,8 +3,6 @@
     <head>
         <title>Index</title>
         <script src="https://apprtc.appspot.com/js/adapter.js"></script>
-        <script src="/js/net.js"></script>
-        <script src="/js/game.js"></script>
         <link rel="stylesheet" type="text/css" href="/css/main.css"/>
     </head>
     <body>
@@ -33,6 +31,6 @@
             <canvas id="field" width="640" height="480"></canvas>
         </div>
 
-        <script src="/js/ui.js"></script>
+        <script src="/js/script.min.js"></script>
     </body>
 </html>

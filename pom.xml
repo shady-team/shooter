@@ -36,6 +36,29 @@
         </pluginManagement>
         <plugins>
             <plugin>
+                <groupId>com.samaxes.maven</groupId>
+                <artifactId>minify-maven-plugin</artifactId>
+                <version>1.7.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>minify</goal>
+                        </goals>
+                        <configuration>
+                            <charset>UTF-8</charset>
+                            <jsSourceIncludes>
+                                <jsSourceInclude>**</jsSourceInclude>
+                            </jsSourceIncludes>
+                            <closureUseDefaultExterns>true</closureUseDefaultExterns>
+                            <closureCreateSourceMap>true</closureCreateSourceMap>
+                            <closureLanguage>ECMASCRIPT5</closureLanguage>
+                            <jsEngine>CLOSURE</jsEngine>
+                            <closureCompilationLevel>ADVANCED_OPTIMIZATIONS</closureCompilationLevel>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
                 <version>9.2.5.v20141112</version>
@@ -47,7 +70,7 @@
                         </systemProperty>
                         <systemProperty>
                             <name>log4j.configuration</name>
-                            <value>file://${build.outputDirectory}/log4j.properties</value>
+                            <value>file://${project.build.outputDirectory}/log4j.properties</value>
                         </systemProperty>
                     </systemProperties>
                 </configuration>
