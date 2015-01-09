@@ -30,7 +30,7 @@
                     <artifactId>maven-war-plugin</artifactId>
                     <configuration>
                         <failOnMissingWebXml>false</failOnMissingWebXml>
-                        <warSourceExcludes>js/*_*.js</warSourceExcludes>
+                        <warSourceExcludes>js/src/**</warSourceExcludes>
                     </configuration>
                 </plugin>
             </plugins>
