@@ -101,12 +101,12 @@ module('net', ['util', 'events'], function (util, events) {
          * @type {Object<string, RTCPeerConnection>}
          * @private
          */
-        this._peerConnections = {};
+        this._peerConnections = Object.create(null);
         /**
          * @type {Object<string, RTCDataChannel>}
          * @private
          */
-        this._dataChannels = {};
+        this._dataChannels = Object.create(null);
         initSubscriptions.call(this);
 
         /**
@@ -124,9 +124,9 @@ module('net', ['util', 'events'], function (util, events) {
      * @param {string} peerId
      */
     WebRTC.prototype.sendOffer = function (peerId) {
-        var observer = this._observer;
-        var pc = createPeerConnection.call(this, peerId);
-        var channel = pc.createDataChannel("dc-" + peerId, {'ordered': false, 'maxRetransmits': 0});
+        var observer = this._observer,
+            pc = createPeerConnection.call(this, peerId),
+            channel = pc.createDataChannel("dc-" + peerId, {'ordered': false, 'maxRetransmits': 0});
         pc.createOffer(function (desc) {
             pc.setLocalDescription(desc, function () {
                 observer.send(E_OFFER, {'id': peerId, 'description': desc});
@@ -178,9 +178,9 @@ module('net', ['util', 'events'], function (util, events) {
         });
 
         observer.on(E_ACCEPT, function (accept) {
-            var id = accept.id;
-            if (id in self._peerConnections) {
-                var pc = self._peerConnections[id];
+            var id = accept.id,
+                pc = self._peerConnections[id];
+            if (pc) {
                 pc.setRemoteDescription(new RTCSessionDescription(accept.description), function () {}, function (err) {
                     util.logger.log("Failed to setRemoteDescription():", err);
                     pc.close();
@@ -200,8 +200,9 @@ module('net', ['util', 'events'], function (util, events) {
         observer.on(E_ICE, function (ice) {
             var id = ice.id,
                 pc = self._peerConnections[id];
-            if (pc)
+            if (pc) {
                 pc.addIceCandidate(new RTCIceCandidate(ice.candidate));
+            }
         });
     }
 
@@ -248,11 +249,12 @@ module('net', ['util', 'events'], function (util, events) {
      * @param {string} id
      */
     WebRTC.prototype.closeConnection = function (id) {
-        if (id in this._peerConnections) {
-            this._peerConnections[id].close();
+        var pc = this._peerConnections[id];
+        if (pc) {
+            pc.close();
 
-            this._dataChannels[id] = null;
-            this._peerConnections[id] = null;
+            delete this._dataChannels[id];
+            delete this._peerConnections[id];
         }
     };
 
@@ -261,10 +263,11 @@ module('net', ['util', 'events'], function (util, events) {
      * @param {string} data
      */
     WebRTC.prototype.send = function (id, data) {
-        if (!(id in this._dataChannels)) {
+        var dataChannel = this._dataChannels[id];
+        if (!dataChannel) {
             throw new Error("No such id");
         }
-        this._dataChannels[id].send(data);
+        dataChannel.send(data);
     };
 
     return {
