@@ -1,43 +1,57 @@
-module('game', ['util', 'events'], function (util, events) {
+// requires util, net
+
+/** @const */
+var game = {};
+
+(function () {
     var /** @const */ ID_SELF = "@self";
 
     /**
      * @constructor
-     * @extends {WithEvents}
+     * @extends {events.WithEvents}
      */
-    function Connector() {}
+    game.Server = function Server() {
+    };
+    /**
+     * @param {Object} message
+     */
+    game.Server.prototype.send = function (message) {
+    };
+
+    /**
+     * @constructor
+     * @extends {events.WithEvents}
+     */
+    game.Connector = function Connector() {
+    };
     /**
      * @param {string} id
      * @param {Object} message
      */
-    Connector.prototype.send = function (id, message) {};
+    game.Connector.prototype.send = function (id, message) {
+    };
+    /**
+     * @param {game.LocalServer} localClient
+     */
+    game.Connector.prototype.connectLocal = function (localClient) {
+    };
 
     /**
-     * @constructor
-     * @extends {WithEvents}
-     */
-    function Server() {}
-    /**
-     * @param {Object} message
-     */
-    Server.prototype.send = function (message) {};
-
-    /**
-     * @param {Connector} connector
+     * @param {game.Connector} connector
      * @constructor
      */
-    function GameServer(connector) {
+    game.GameServer = function GameServer(connector) {
         this._connector = connector;
         /**
-         * @type {Array<string>}
+         * @type {Array.<string>}
          * @private
          */
         this._clients = [];
         initServerEvents.call(this);
-    }
+    };
 
     /**
-     * @this {GameServer}
+     * @this {game.GameServer}
      */
     function initServerEvents() {
         var connector = this._connector,
@@ -52,7 +66,7 @@ module('game', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {GameServer}
+     * @this {game.GameServer}
      * @param {string} id
      * @param {Object} message
      */
@@ -66,11 +80,11 @@ module('game', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @param {Server} server
+     * @param {game.Server} server
      * @param {HTMLCanvasElement} canvas
      * @constructor
      */
-    function GameClient(server, canvas) {
+    game.GameClient = function GameClient(server, canvas) {
         this._server = server;
         this._canvas = canvas;
         this._ctx = canvas.getContext("2d");
@@ -78,10 +92,10 @@ module('game', ['util', 'events'], function (util, events) {
         initCanvas.call(this);
         initClientEvents.call(this);
         initCanvasEvents.call(this);
-    }
+    };
 
     /**
-     * @this {GameClient}
+     * @this {game.GameClient}
      */
     function initCanvas() {
         var canvas = this._canvas;
@@ -90,7 +104,7 @@ module('game', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {GameClient}
+     * @this {game.GameClient}
      */
     function initClientEvents() {
         var server = this._server,
@@ -105,7 +119,7 @@ module('game', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {GameClient}
+     * @this {game.GameClient}
      */
     function initCanvasEvents() {
         var canvas = this._canvas,
@@ -132,21 +146,21 @@ module('game', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @param {Connector} connector
+     * @param {game.Connector} connector
      * @param {string} serverId
      * @constructor
-     * @extends {Server}
+     * @extends {game.Server}
      */
-    function RemoteServer(connector, serverId) {
+    game.RemoteServer = function RemoteServer(connector, serverId) {
         this._connector = connector;
         this._server = serverId;
         initRemoteServerEvents.call(this);
-    }
+    };
 
-    RemoteServer.prototype = new events.WithEvents();
+    game.RemoteServer.prototype = new events.WithEvents();
 
     /**
-     * @this {RemoteServer}
+     * @this {game.RemoteServer}
      * @param {string} type
      * @param {string} id
      * @param {Object} message
@@ -156,7 +170,7 @@ module('game', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {RemoteServer}
+     * @this {game.RemoteServer}
      */
     function initRemoteServerEvents() {
         var connector = this._connector;
@@ -168,36 +182,36 @@ module('game', ['util', 'events'], function (util, events) {
     /**
      * @param {Object} message
      */
-    RemoteServer.prototype.send = function (message) {
+    game.RemoteServer.prototype.send = function (message) {
         this._connector.send(this._server, message);
     };
 
     /**
-     * @param {Connector} connector
+     * @param {game.Connector} connector
      * @constructor
-     * @extends {Server}
+     * @extends {game.Server}
      */
-    function LocalServer(connector) {
+    game.LocalServer = function LocalServer(connector) {
         this._connector = connector;
         this._opened = false;
-        connectLocal.call(connector, this);
-    }
+        connector.connectLocal(this);
+    };
 
-    LocalServer.prototype = new events.WithEvents();
+    game.LocalServer.prototype = new events.WithEvents();
 
     /**
      * @param {Object} message
      */
-    LocalServer.prototype.send = function (message) {
+    game.LocalServer.prototype.send = function (message) {
         this._connector.fire(events.E_MESSAGE, ID_SELF, message);
     };
 
     /**
      * @param {string} type
-     * @param {function(...*)} handler
+     * @param {*} handler
      * @override
      */
-    LocalServer.prototype.on = function (type, handler) {
+    game.LocalServer.prototype.on = function (type, handler) {
         if (type === events.E_OPEN && !this._opened) {
             this._opened = true;
             handler.call(this);
@@ -206,24 +220,24 @@ module('game', ['util', 'events'], function (util, events) {
     };
 
     /**
-     * @param {WebRTC} webRtc
+     * @param {net.WebRTC} webRtc
      * @constructor
-     * @extends {Connector}
+     * @extends {game.Connector}
      */
-    function WebRTCConnectorAdapter(webRtc) {
+    game.WebRTCConnectorAdapter = function WebRTCConnectorAdapter(webRtc) {
         this._rtc = webRtc;
         /**
-         * @type {LocalServer}
+         * @type {game.LocalServer}
          * @private
          */
         this._localClient = null;
         initAdapterEvents.call(this);
-    }
+    };
 
-    WebRTCConnectorAdapter.prototype = new events.WithEvents();
+    game.WebRTCConnectorAdapter.prototype = new events.WithEvents();
 
     /**
-     * @this {WebRTCConnectorAdapter}
+     * @this {game.WebRTCConnectorAdapter}
      * @param {string} type
      * @param {string} id
      * @param {string} message
@@ -233,7 +247,7 @@ module('game', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {WebRTCConnectorAdapter}
+     * @this {game.WebRTCConnectorAdapter}
      */
     function initAdapterEvents() {
         var rtc = this._rtc;
@@ -246,7 +260,7 @@ module('game', ['util', 'events'], function (util, events) {
      * @param {string} id
      * @param {Object} message
      */
-    WebRTCConnectorAdapter.prototype.send = function (id, message) {
+    game.WebRTCConnectorAdapter.prototype.send = function (id, message) {
         if (id === ID_SELF) {
             this._localClient && this._localClient.fire(events.E_MESSAGE, message);
         } else {
@@ -255,19 +269,10 @@ module('game', ['util', 'events'], function (util, events) {
     };
 
     /**
-     * @this {WebRTCConnectorAdapter}
-     * @param {LocalServer} localClient
+     * @param {game.LocalServer} localClient
      */
-    function connectLocal(localClient) {
+    game.WebRTCConnectorAdapter.prototype.connectLocal = function (localClient) {
         this._localClient = localClient;
         this.fire(events.E_OPEN, ID_SELF);
-    }
-
-    return {
-        GameServer: GameServer,
-        GameClient: GameClient,
-        RemoteServer: RemoteServer,
-        LocalServer: LocalServer,
-        WebRTCConnectorAdapter: WebRTCConnectorAdapter
     };
-});
+})();

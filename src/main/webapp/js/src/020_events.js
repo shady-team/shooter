@@ -1,28 +1,33 @@
-module('events', ['util'], function(util) {
+// requires util
+
+/** @const */
+var events = {};
+
+(function () {
     /**
      * @constructor
      */
-    function WithEvents() {
+    events.WithEvents = function WithEvents() {
         /**
-         * @type {Object<string,Array<function(...*)>>}
+         * @type {Object.<string,Array.<function(...[*])>>}
          * @private
          */
         this._handlers = Object.create(null);
-    }
+    };
 
     /**
      * @param {string} type
-     * @param {function(...*)} handler
+     * @param {*} handler
      */
-    WithEvents.prototype.on = function (type, handler) {
+    events.WithEvents.prototype.on = function (type, handler) {
         (this._handlers[type] || (this._handlers[type] = [])).push(handler);
     };
 
     /**
      * @param {string} type
-     * @param {function(...*)=} handler
+     * @param {*} handler
      */
-    WithEvents.prototype.off = function (type, handler) {
+    events.WithEvents.prototype.off = function (type, handler) {
         if (!this._handlers[type])
             return;
         if (handler === undefined) {
@@ -35,9 +40,9 @@ module('events', ['util'], function(util) {
     };
 
     /**
-     * @type {function(string,...*)}
+     * @type {function(string,...[*])}
      */
-    WithEvents.prototype.fire = function (type) {
+    events.WithEvents.prototype.fire = function (type) {
         if (!this._handlers[type])
             return;
         var handlers = this._handlers[type].slice();
@@ -51,12 +56,8 @@ module('events', ['util'], function(util) {
         }, this);
     };
 
-    return {
-        WithEvents: WithEvents,
-
-        E_OPEN: 'open',
-        E_MESSAGE: 'message',
-        E_CLOSE: 'close',
-        E_ERROR: 'error'
-    };
-});
+    events.E_OPEN = 'open';
+    events.E_MESSAGE = 'message';
+    events.E_CLOSE = 'close';
+    events.E_ERROR = 'error';
+})();

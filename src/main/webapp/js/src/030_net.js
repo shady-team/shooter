@@ -1,4 +1,9 @@
-module('net', ['util', 'events'], function (util, events) {
+// requires util, events
+
+/** @const */
+var net = {};
+
+(function () {
     var /** @const */ E_ICE = 'ice',
         /** @const */ E_OFFER = 'offer',
         /** @const */ E_ACCEPT = 'accept',
@@ -10,10 +15,10 @@ module('net', ['util', 'events'], function (util, events) {
      * @param {string} url
      * @constructor
      */
-    function Observer(url) {
+    net.Observer = function Observer(url) {
         this._ws = new WebSocket(url);
         /**
-         * @type {Object<string,function(*)>}
+         * @type {Object.<string,function(*)>}
          * @private
          */
         this._on = {};
@@ -26,10 +31,10 @@ module('net', ['util', 'events'], function (util, events) {
          */
         this.onClose = null;
         initObserverEvents.call(this);
-    }
+    };
 
     /**
-     * @this {Observer}
+     * @this {net.Observer}
      */
     function initObserverEvents() {
         var ws = this._ws;
@@ -40,7 +45,7 @@ module('net', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {Observer}
+     * @this {net.Observer}
      * @param {Event} evt
      */
     function wsOpen(evt) {
@@ -48,7 +53,7 @@ module('net', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {Observer}
+     * @this {net.Observer}
      * @param {Event} evt
      */
     function wsError(evt) {
@@ -56,7 +61,7 @@ module('net', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {Observer}
+     * @this {net.Observer}
      * @param {Event} evt
      */
     function wsClose(evt) {
@@ -64,8 +69,8 @@ module('net', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {Observer}
-     * @param {MessageEvent<?>} message
+     * @this {net.Observer}
+     * @param {MessageEvent.<?>} message
      */
     function wsMessage(message) {
         var parts = message.data.split("\n\n", 2),
@@ -78,7 +83,7 @@ module('net', ['util', 'events'], function (util, events) {
      * @param {string} type
      * @param {function(*)} handler
      */
-    Observer.prototype.on = function (type, handler) {
+    net.Observer.prototype.on = function (type, handler) {
         this._on[type] = handler;
     };
 
@@ -86,24 +91,24 @@ module('net', ['util', 'events'], function (util, events) {
      * @param {string} type
      * @param {*} message
      */
-    Observer.prototype.send = function (type, message) {
+    net.Observer.prototype.send = function (type, message) {
         this._ws.send(type + "\n\n" + JSON.stringify(message));
     };
 
     /**
-     * @param {Observer} observer
+     * @param {net.Observer} observer
      * @constructor
-     * @extends {WithEvents}
+     * @extends {events.WithEvents}
      */
-    function WebRTC(observer) {
+    net.WebRTC = function WebRTC(observer) {
         this._observer = observer;
         /**
-         * @type {Object<string, RTCPeerConnection>}
+         * @type {Object.<string, RTCPeerConnection>}
          * @private
          */
         this._peerConnections = Object.create(null);
         /**
-         * @type {Object<string, RTCDataChannel>}
+         * @type {Object.<string, RTCDataChannel>}
          * @private
          */
         this._dataChannels = Object.create(null);
@@ -115,18 +120,20 @@ module('net', ['util', 'events'], function (util, events) {
          * @param {function()} accept
          * @param {function(string=)} reject
          */
-        this.onIncomingConnection = function (offer, accept, reject) { reject(); };
-    }
+        this.onIncomingConnection = function (offer, accept, reject) {
+            reject();
+        };
+    };
 
-    WebRTC.prototype = new events.WithEvents();
+    net.WebRTC.prototype = new events.WithEvents();
 
     /**
      * @param {string} peerId
      */
-    WebRTC.prototype.sendOffer = function (peerId) {
+    net.WebRTC.prototype.sendOffer = function (peerId) {
         var observer = this._observer,
             pc = createPeerConnection.call(this, peerId),
-            channel = pc.createDataChannel("dc-" + peerId, {'ordered': false, 'maxRetransmits': 0});
+            channel = pc.createDataChannel("dc-" + peerId, {'ordered': false, 'maxRetransmits': 0, 'reliable': false});
         pc.createOffer(function (desc) {
             pc.setLocalDescription(desc, function () {
                 observer.send(E_OFFER, {'id': peerId, 'description': desc});
@@ -142,7 +149,7 @@ module('net', ['util', 'events'], function (util, events) {
     };
 
     /**
-     * @this {WebRTC}
+     * @this {net.WebRTC}
      */
     function initSubscriptions() {
         var self = this;
@@ -181,7 +188,7 @@ module('net', ['util', 'events'], function (util, events) {
             var id = accept.id,
                 pc = self._peerConnections[id];
             if (pc) {
-                pc.setRemoteDescription(new RTCSessionDescription(accept.description), function () {}, function (err) {
+                pc.setRemoteDescription(new RTCSessionDescription(accept.description), util.noop, function (err) {
                     util.logger.log("Failed to setRemoteDescription():", err);
                     pc.close();
                 });
@@ -207,7 +214,7 @@ module('net', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {WebRTC}
+     * @this {net.WebRTC}
      * @param {string} id
      * @return {RTCPeerConnection}
      */
@@ -228,7 +235,7 @@ module('net', ['util', 'events'], function (util, events) {
     }
 
     /**
-     * @this {WebRTC}
+     * @this {net.WebRTC}
      */
     function initDataChannelHandlers(id) {
         var dc = this._dataChannels[id],
@@ -248,7 +255,7 @@ module('net', ['util', 'events'], function (util, events) {
     /**
      * @param {string} id
      */
-    WebRTC.prototype.closeConnection = function (id) {
+    net.WebRTC.prototype.closeConnection = function (id) {
         var pc = this._peerConnections[id];
         if (pc) {
             pc.close();
@@ -262,16 +269,11 @@ module('net', ['util', 'events'], function (util, events) {
      * @param {string} id
      * @param {string} data
      */
-    WebRTC.prototype.send = function (id, data) {
+    net.WebRTC.prototype.send = function (id, data) {
         var dataChannel = this._dataChannels[id];
         if (!dataChannel) {
             throw new Error("No such id");
         }
         dataChannel.send(data);
     };
-
-    return {
-        Observer: Observer,
-        WebRTC: WebRTC
-    };
-});
+})();

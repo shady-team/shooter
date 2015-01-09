@@ -1,4 +1,4 @@
-module('ui', ['net', 'game', 'events'], function (net, game, events) {
+(function () {
     var observer, webRtc, server,
         field = document.getElementById("field"),
         loginForm = document.getElementById("login-form"),
@@ -89,4 +89,4 @@ module('ui', ['net', 'game', 'events'], function (net, game, events) {
         requestLists();
         this.disabled = true;
     });
-});
+})();
