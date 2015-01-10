@@ -20,7 +20,7 @@
                 }
             };
             webRtc.on(events.E_OPEN, function (id) {
-                new game.GameClient(new game.RemoteServer(new game.WebRTCConnectorAdapter(webRtc), id), field);
+                new game.GameClient(new game.net.RemoteServer(new game.net.WebRTCConnectorAdapter(webRtc), id), field);
             });
         };
         observer.on("peers", function (data) {
@@ -83,9 +83,9 @@
     document.getElementById("host").addEventListener("click", function () {
         observer.send("host", {});
         webRtc.off(events.E_OPEN);
-        var connector = new game.WebRTCConnectorAdapter(webRtc);
+        var connector = new game.net.WebRTCConnectorAdapter(webRtc);
         server = new game.GameServer(connector);
-        new game.GameClient(new game.LocalServer(connector), field);
+        new game.GameClient(new game.net.LocalServer(connector), field);
         requestLists();
         this.disabled = true;
     });
