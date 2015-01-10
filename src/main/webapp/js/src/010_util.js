@@ -89,11 +89,16 @@ var util = {};
     util.NoopLogger = function NoopLogger() {
     };
 
-    util.NoopLogger.prototype.log = function() {};
-    util.NoopLogger.prototype.info = function() {};
-    util.NoopLogger.prototype.warn = function() {};
-    util.NoopLogger.prototype.error = function() {};
-    util.NoopLogger.prototype.assert = function() {};
+    util.NoopLogger.prototype.log = function () {
+    };
+    util.NoopLogger.prototype.info = function () {
+    };
+    util.NoopLogger.prototype.warn = function () {
+    };
+    util.NoopLogger.prototype.error = function () {
+    };
+    util.NoopLogger.prototype.assert = function () {
+    };
 
     /**
      * @type {util.Logger}
@@ -107,4 +112,22 @@ var util = {};
      * @type {function(this:util.Logger,boolean,string)}
      */
     util.assert = util.logger.assert.bind(util.logger);
+
+    /**
+     * @template A, B, C
+     * @param {function(A,B):C} func
+     * @return {function(B,A):C}
+     */
+    util.swapBinary = function (func) {
+        return function (a, b) {
+            return func(b, a);
+        }
+    };
+
+    /**
+     * @param {number} x
+     */
+    util.sign = function (x) {
+        return (x > 0) - (x < 0);
+    }
 })();
