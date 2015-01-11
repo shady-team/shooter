@@ -1,12 +1,11 @@
-// requires game.net
-
+// requires game.net, game.message
 (function () {
     /**
      * @param {game.net.Server} server
      * @param {HTMLCanvasElement} canvas
      * @constructor
      */
-    game.GameClient = function GameClient(server, canvas) {
+    game.client.GameClient = function GameClient(server, canvas) {
         this._server = server;
         this._canvas = canvas;
         this._ctx = canvas.getContext("2d");
@@ -17,7 +16,7 @@
     };
 
     /**
-     * @this {game.GameClient}
+     * @this {game.client.GameClient}
      */
     function initCanvas() {
         var canvas = this._canvas;
@@ -26,7 +25,7 @@
     }
 
     /**
-     * @this {game.GameClient}
+     * @this {game.client.GameClient}
      */
     function initCanvasEvents() {
         var canvas = this._canvas,
@@ -44,7 +43,12 @@
             y = evt.offsetY;
         });
         canvas.addEventListener("mouseup", function (evt) {
-            var message = new game.DrawMessage(x, y, evt.offsetX, evt.offsetY);
+            var message = new game.message.DrawMessage(
+                /** @type {number} */ (x),
+                /** @type {number} */ (y),
+                evt.offsetX,
+                evt.offsetY
+            );
             server.send(message);
             server.fire(events.E_MESSAGE, message);
             x = null;
@@ -53,24 +57,24 @@
     }
 
     /**
-     * @this {game.GameClient}
+     * @this {game.client.GameClient}
      */
     function initClientEvents() {
         var server = this._server;
         server.on(events.E_MESSAGE, onMessage.bind(this));
     }
 
-    var handlersHolder = new game.MessageHandlersHolder();
+    var handlersHolder = new game.message.MessageHandlersHolder();
 
     /**
-     * @this {game.GameClient}
+     * @this {game.client.GameClient}
      * @param {Object} message
      */
     function onMessage(message) {
         handlersHolder.handle(this, message);
     }
 
-    handlersHolder.registerHandler(game.DrawMessage.TYPE, function (message) {
+    handlersHolder.registerHandler(game.message.DrawMessage.TYPE, function (message) {
         var ctx = this._ctx;
         ctx.beginPath();
         ctx.moveTo(message.x1, message.y1);

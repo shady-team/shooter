@@ -1,8 +1,3 @@
-/** @define {boolean} */
-var DEBUG = true;
-
-var util = {};
-
 (function () {
     util.noop = function noop() {
     };

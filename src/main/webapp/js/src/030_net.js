@@ -1,8 +1,4 @@
 // requires util, events
-
-/** @const */
-var net = {};
-
 (function () {
     var /** @const */ E_ICE = 'ice',
         /** @const */ E_OFFER = 'offer',

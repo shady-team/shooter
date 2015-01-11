@@ -1,6 +1,3 @@
-var game = {};
-game.net = {};
-
 (function () {
     /** @const */
     var ID_SELF = "@self";

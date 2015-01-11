@@ -1,8 +1,4 @@
 // requires util, geom
-
-/** @const */
-var phys = {};
-
 (function () {
     /**
      * @interface

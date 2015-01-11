@@ -1,11 +1,10 @@
-// requires util, game.net
-
+// requires util, game.net, game.message
 (function () {
     /**
      * @param {game.net.Connector} connector
      * @constructor
      */
-    game.GameServer = function GameServer(connector) {
+    game.server.GameServer = function GameServer(connector) {
         this._connector = connector;
         /**
          * @type {Array.<string>}
@@ -16,7 +15,7 @@
     };
 
     /**
-     * @this {game.GameServer}
+     * @this {game.server.GameServer}
      */
     function initServerEvents() {
         var connector = this._connector;
@@ -26,28 +25,28 @@
     }
 
     /**
-     * @this {game.GameServer}
+     * @this {game.server.GameServer}
      * @param {string} id
      */
     function onOpen(id) {
         this._clients.push(id);
         sendClients.call(this, id);
-        sendAll.call(this, new game.ConnectMessage(id), id);
+        sendAll.call(this, new game.message.ConnectMessage(id), id);
     }
 
     /**
-     * @this {game.GameServer}
+     * @this {game.server.GameServer}
      * @param {string} id
      */
     function onClose(id) {
         this._clients.splice(this._clients.indexOf(id), 1);
-        sendAll.call(this, new game.DisconnectMessage(id));
+        sendAll.call(this, new game.message.DisconnectMessage(id));
     }
 
-    var handlersHolder = new game.MessageHandlersHolder();
+    var handlersHolder = new game.message.MessageHandlersHolder();
 
     /**
-     * @this {game.GameServer}
+     * @this {game.server.GameServer}
      * @param {string} id
      * @param {Object} message
      */
@@ -56,8 +55,8 @@
     }
 
     /**
-     * @this {game.GameServer}
-     * @param {game.Message} message
+     * @this {game.server.GameServer}
+     * @param {game.message.Message} message
      * @param {function(string):boolean} filter
      * @param {string} client
      */
@@ -68,8 +67,8 @@
     }
 
     /**
-     * @this {game.GameServer}
-     * @param {game.Message} message
+     * @this {game.server.GameServer}
+     * @param {game.message.Message} message
      * @param {function(string):boolean|Array.<string>|string=} excludes
      */
     function sendAll(message, excludes) {
@@ -101,9 +100,9 @@
     }
 
     /**
-     * @this {game.GameServer}
+     * @this {game.server.GameServer}
      * @param {function(string):boolean|Array.<string>|string} includes
-     * @param {game.Message} message
+     * @param {game.message.Message} message
      */
     function sendTo(includes, message) {
         if (util.isFunction(includes)) {
@@ -123,18 +122,18 @@
     }
 
     /**
-     * @this {game.GameServer}
+     * @this {game.server.GameServer}
      * @param {string} id
      */
     function sendClients(id) {
         sendTo.call(this, id,
-            new game.ClientListMessage(this._clients.filter(function (client) {
+            new game.message.ClientListMessage(this._clients.filter(function (client) {
                 return client !== id;
             }))
         );
     }
 
-    handlersHolder.registerHandler(game.DrawMessage.TYPE, function (message, id) {
+    handlersHolder.registerHandler(game.message.DrawMessage.TYPE, function (message, id) {
         sendAll.call(this, message, id);
     });
 })();

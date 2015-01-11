@@ -1,8 +1,4 @@
 // requires util
-
-/** @const */
-var events = {};
-
 (function () {
     /**
      * @constructor

@@ -1,3 +1,4 @@
+// requires net, game.server, game.client
 (function () {
     var observer, webRtc, server,
         field = document.getElementById("field"),
@@ -20,7 +21,7 @@
                 }
             };
             webRtc.on(events.E_OPEN, function (id) {
-                new game.GameClient(new game.net.RemoteServer(new game.net.WebRTCConnectorAdapter(webRtc), id), field);
+                new game.client.GameClient(new game.net.RemoteServer(new game.net.WebRTCConnectorAdapter(webRtc), id), field);
             });
         };
         observer.on("peers", function (data) {
@@ -84,8 +85,8 @@
         observer.send("host", {});
         webRtc.off(events.E_OPEN);
         var connector = new game.net.WebRTCConnectorAdapter(webRtc);
-        server = new game.GameServer(connector);
-        new game.GameClient(new game.net.LocalServer(connector), field);
+        server = new game.server.GameServer(connector);
+        new game.client.GameClient(new game.net.LocalServer(connector), field);
         requestLists();
         this.disabled = true;
     });
