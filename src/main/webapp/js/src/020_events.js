@@ -25,7 +25,7 @@ var events = {};
 
     /**
      * @param {string} type
-     * @param {*} handler
+     * @param {*=} handler
      */
     events.WithEvents.prototype.off = function (type, handler) {
         if (!this._handlers[type])

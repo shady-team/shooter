@@ -145,10 +145,9 @@ var geom = {};
     }
 
     /**
-     * @template A, B
      * @param {string} descriptorA
      * @param {string} descriptorB
-     * @param {function(A,B):number} calculator
+     * @param {function(?,?):number} calculator
      */
     function registerDistanceCalculator(descriptorA, descriptorB, calculator) {
         distanceCalculators[pairDescriptor(descriptorA, descriptorB)] = calculator;
@@ -163,7 +162,7 @@ var geom = {};
      */
     geom.distance = function distance(a, b) {
         var calculator = distanceCalculators[pairDescriptor(a.descriptor, b.descriptor)];
-        util.assert(!!calculator, "distance is not defined on pair of " + a.descriptor + " and " + b.descriptor);
+        util.assert(util.isDefined(calculator), "distance is not defined on pair of " + a.descriptor + " and " + b.descriptor);
         return calculator.call(null, a, b);
     };
 
@@ -201,6 +200,7 @@ var geom = {};
          */
         function (a, b) {
             // TODO
+            return 0;
         }
     );
 })();

@@ -129,5 +129,37 @@ var util = {};
      */
     util.sign = function (x) {
         return (x > 0) - (x < 0);
-    }
+    };
+
+    /**
+     * @param {*} value
+     * @return {boolean}
+     */
+    util.isArray = function (value) {
+        return Array.isArray(value);
+    };
+
+    /**
+     * @param {*} value
+     * @return {boolean}
+     */
+    util.isFunction = function (value) {
+        return typeof value === 'function';
+    };
+
+    /**
+     * @param {*} value
+     * @return {boolean}
+     */
+    util.isString = function (value) {
+        return typeof value === 'string';
+    };
+
+    /**
+     * @param {*} value
+     * @return {boolean}
+     */
+    util.isDefined = function (value) {
+        return value !== void 0 && value !== null;
+    };
 })();

@@ -88,12 +88,12 @@ var phys = {};
     var collisionHandlers = Object.create(null);
 
     /**
-     * @param {string} descriptorA
-     * @param {string} descriptorB
+     * @param {string} a
+     * @param {string} b
      * @return {string}
      */
-    function collisionKey(descriptorA, descriptorB) {
-        return descriptorA + "&" + descriptorB;
+    function collisionKey(a, b) {
+        return a + "&" + b;
     }
 
     /**
@@ -124,7 +124,7 @@ var phys = {};
      * @param {geom.Vector} force
      */
     function applyForce(a, b, force) {
-        var aPart = 1 / (a.weight / b.weight + 1), // protected against Infinities and NaNs
+        var aPart = 1 / (a.weight / b.weight + 1), // protected against Infinities
             bPart = 1 / (b.weight / a.weight + 1);
         a.position = a.position.add(force.multiply(aPart));
         b.position = b.position.subtract(force.multiply(bPart));
@@ -184,4 +184,16 @@ var phys = {};
             return false;
         }
     );
+
+    phys.simulate = function (bodies) {
+        var satisfied = false;
+        while (!satisfied) {
+            satisfied = true;
+            bodies.forEach(function (a) {
+                bodies.forEach(function (b) {
+                    satisfied &= a === b || phys.collide(a, b);
+                });
+            });
+        }
+    };
 })();
