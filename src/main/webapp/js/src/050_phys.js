@@ -101,11 +101,22 @@
     };
 
     /**
+     * @return {*}
+     */
+    phys.Body.prototype.toJSON = function () {
+        return {
+            position: this.position,
+            shape: this.shape,
+            weight: this.weight.toString() // because weight can be Infinite
+        };
+    };
+
+    /**
      * @param {phys.Body} obj
      * @return {phys.Body}
      */
     phys.reviveBody = function (obj) {
-        return new phys.Body(geom.Vector.revive(obj.position), reviversHolder.revive(obj.shape), obj.weight);
+        return new phys.Body(geom.Vector.revive(obj.position), reviversHolder.revive(obj.shape), +obj.weight);
     };
 
     /**
