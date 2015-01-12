@@ -53,7 +53,7 @@
      * @param {Event} evt
      */
     function wsError(evt) {
-        util.logger.log("observing connection establishment failed", evt);
+        util.log("observing connection establishment failed", evt);
     }
 
     /**
@@ -102,12 +102,12 @@
          * @type {Object.<string, RTCPeerConnection>}
          * @private
          */
-        this._peerConnections = Object.create(null);
+        this._peerConnections = util.emptyObject();
         /**
          * @type {Object.<string, RTCDataChannel>}
          * @private
          */
-        this._dataChannels = Object.create(null);
+        this._dataChannels = util.emptyObject();
         initSubscriptions.call(this);
 
         /**
@@ -134,10 +134,10 @@
             pc.setLocalDescription(desc, function () {
                 observer.send(E_OFFER, {'id': peerId, 'description': desc});
             }, function (err) {
-                util.logger.log('Failed to setLocalDescription():', err);
+                util.log('Failed to setLocalDescription():', err);
             });
         }, function (err) {
-            util.logger.log('Failed to createOffer():', err);
+            util.log('Failed to createOffer():', err);
         });
         this._peerConnections[peerId] = pc;
         this._dataChannels[peerId] = channel;
@@ -158,7 +158,7 @@
                 var pc = createPeerConnection.call(self, id);
 
                 function rejectOnError(err) {
-                    util.logger.log(err);
+                    util.log(err);
                     observer.send(E_REJECT, {'id': id, 'reason': 'Error occurred'});
                     pc.close();
                 }
@@ -185,7 +185,7 @@
                 pc = self._peerConnections[id];
             if (pc) {
                 pc.setRemoteDescription(new RTCSessionDescription(accept.description), util.noop, function (err) {
-                    util.logger.log("Failed to setRemoteDescription():", err);
+                    util.log("Failed to setRemoteDescription():", err);
                     pc.close();
                 });
             }

@@ -1,11 +1,14 @@
 // requires net, game.server, game.client
 (function () {
     var observer, webRtc, server,
-        field = document.getElementById("field"),
+        field = /** @type {HTMLCanvasElement} */ (document.getElementById("field")),
         loginForm = document.getElementById("login-form"),
         postLogin = document.getElementById("post-login"),
         peerList = document.getElementById("peers"),
         hostList = document.getElementById("hosts");
+    /**
+     * @param {?Event=} evt
+     */
     loginForm.onsubmit = function (evt) {
         evt.preventDefault();
 

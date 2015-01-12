@@ -1,5 +1,5 @@
 /** @define {boolean} */
-var DEBUG = true;
+var DEBUG = false;
 
 /** @const */
 var util = {};
@@ -12,12 +12,16 @@ var geom = {};
 /** @const */
 var phys = {};
 /** @const */
-var game = {};
+var visual = {};
 /** @const */
-game.net = {};
-/** @const */
-game.message = {};
-/** @const */
-game.server = {};
-/** @const */
-game.client = {};
+var game = {
+    data: {},
+    net: {},
+    message: {},
+    logic: {},
+    server: {},
+    client: {}
+};
+
+/** @const {number} */
+var EPS = 1e-4;

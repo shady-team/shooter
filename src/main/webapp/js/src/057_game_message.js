@@ -27,6 +27,13 @@
     game.message.ConnectMessage.TYPE = 'connect';
 
     /**
+     * @static
+     * @param {game.message.ConnectMessage} obj
+     * @return {game.message.ConnectMessage}
+     */
+    game.message.ConnectMessage.revive = util.identity;
+
+    /**
      * @param {string} id
      * @constructor
      * @extends {game.message.Message}
@@ -41,6 +48,13 @@
      * @const {string}
      */
     game.message.DisconnectMessage.TYPE = 'disconnect';
+
+    /**
+     * @static
+     * @param {game.message.ConnectMessage} obj
+     * @return {game.message.ConnectMessage}
+     */
+    game.message.ConnectMessage.revive = util.identity;
 
     /**
      * @param {Array.<string>} clients
@@ -59,62 +73,81 @@
     game.message.ClientListMessage.TYPE = 'client_list';
 
     /**
-     * @param {number} x1
-     * @param {number} y1
-     * @param {number} x2
-     * @param {number} y2
+     * @static
+     * @param {game.message.ClientListMessage} obj
+     * @return {game.message.ClientListMessage}
+     */
+    game.message.ClientListMessage.revive = util.identity;
+
+    /**
+     * @param {game.data.ModificationsBatch} batch
      * @constructor
      * @extends {game.message.Message}
      */
-    game.message.DrawMessage = function (x1, y1, x2, y2) {
+    game.message.ObjectsModificationsMessage = function (batch) {
         game.message.Message.call(this);
-        this.x1 = x1;
-        this.y1 = y1;
-        this.x2 = x2;
-        this.y2 = y2;
+        this.batch = batch;
     };
 
     /**
      * @static
      * @const {string}
      */
-    game.message.DrawMessage.TYPE = 'draw';
+    game.message.ObjectsModificationsMessage.TYPE = 'obj_modified';
 
     /**
-     * @type {Object.<string,function(Object):game.message.Message>}
+     * @static
+     * @param {game.message.ObjectsModificationsMessage} obj
+     * @return {game.message.ObjectsModificationsMessage}
      */
-    var messageRevivers = Object.create(null);
+    game.message.ObjectsModificationsMessage.revive = function (obj) {
+        obj.batch = game.data.reviveModificationsBatch(obj.batch);
+        return obj;
+    };
 
     /**
-     * @param {string} messageType
-     * @param {function(Object):game.message.Message} reviver
+     * @param {Array.<game.data.GameObject>} objects
+     * @constructor
+     * @extends {game.message.Message}
      */
-    function registerMessageReviver(messageType, reviver) {
-        messageRevivers[messageType] = reviver;
-    }
-
-    registerMessageReviver(game.message.ConnectMessage.TYPE, function (obj) {
-        return new game.message.ConnectMessage(obj.id)
-    });
-    registerMessageReviver(game.message.DisconnectMessage.TYPE, function (obj) {
-        return new game.message.DisconnectMessage(obj.id)
-    });
-    registerMessageReviver(game.message.ClientListMessage.TYPE, function (obj) {
-        return new game.message.ClientListMessage(obj.clients)
-    });
-    registerMessageReviver(game.message.DrawMessage.TYPE, function (obj) {
-        return new game.message.DrawMessage(obj.x1, obj.y1, obj.x2, obj.y2);
-    });
+    game.message.ObjectsCreationMessage = function (objects) {
+        game.message.Message.call(this);
+        this.objects = objects;
+    };
 
     /**
-     * @param {Object} message
-     * @return {game.message.Message}
+     * @static
+     * @const {string}
      */
-    function reviveMessage(message) {
-        util.assert(util.isDefined(message.type), "Bad message, type is not defined");
-        util.assert(util.isDefined(messageRevivers[message.type]), "Message has no registered reviver");
-        return messageRevivers[message.type].call(null, message);
-    }
+    game.message.ObjectsCreationMessage.TYPE = 'objects_creation';
+
+    /**
+     * @static
+     * @param {game.message.ObjectsCreationMessage} obj
+     * @return {game.message.ObjectsCreationMessage}
+     */
+    game.message.ObjectsCreationMessage.revive = function (obj) {
+        obj.objects = obj.objects.map(function (object) {
+            return game.data.reviveGameObject(object);
+        });
+        return obj;
+    };
+
+    var reviversHolder = new util.ReviversHolder(
+        /**
+         * @param {game.message.Message} obj
+         * @return {string}
+         */
+        function (obj) {
+            return obj.type;
+        }
+    );
+
+    reviversHolder.registerReviver(game.message.ConnectMessage.TYPE, game.message.ConnectMessage.revive);
+    reviversHolder.registerReviver(game.message.DisconnectMessage.TYPE, game.message.DisconnectMessage.revive);
+    reviversHolder.registerReviver(game.message.ClientListMessage.TYPE, game.message.ClientListMessage.revive);
+    reviversHolder.registerReviver(game.message.ObjectsModificationsMessage.TYPE, game.message.ObjectsModificationsMessage.revive);
+    reviversHolder.registerReviver(game.message.ObjectsCreationMessage.TYPE, game.message.ObjectsCreationMessage.revive);
 
     /**
      * @constructor
@@ -124,7 +157,7 @@
          * @type {Object.<string,function(...[?])>}
          * @private
          */
-        this._handlers = Object.create(null);
+        this._handlers = util.emptyObject();
     };
 
     /**
@@ -140,13 +173,13 @@
      */
     game.message.MessageHandlersHolder.prototype.handle = function (thisArg, message) {
         var args = [].splice.call(arguments, 1),
-            revived = reviveMessage(message),
+            revived = reviversHolder.revive(message),
             handler = this._handlers[revived.type];
         args[0] = revived;
         if (util.isDefined(handler)) {
             handler.apply(thisArg, args);
         } else {
-            util.logger.log("No handler registered for message", revived);
+            util.warn("No handler registered for message", revived);
         }
     };
 })();

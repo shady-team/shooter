@@ -1,112 +1,51 @@
 (function () {
-    util.noop = function noop() {
-    };
+    if (DEBUG) {
+        /** @type {function(...[*])} */
+        util.log = console.log.bind(console);
+        /** @type {function(...[*])} */
+        util.info = console.info.bind(console);
+        /** @type {function(...[*])} */
+        util.warn = console.warn.bind(console);
+        /** @type {function(...[*])} */
+        util.error = console.error.bind(console);
+        /**
+         * @param {boolean} test
+         * @param {string} message
+         */
+        util.assert = function (test, message) {
+            console.assert(test, message);
+            if (!test) {
+                throw new Error(message);
+            }
+        };
+    } else {
+        /** @type {function(...[*])} */
+        util.log = function () {
+        };
+        /** @type {function(...[*])} */
+        util.info = function () {
+        };
+        /** @type {function(...[*])} */
+        util.warn = function () {
+        };
+        /** @type {function(...[*])} */
+        util.error = function () {
+        };
+        /**
+         * @param {boolean} test
+         * @param {string} message
+         */
+        util.assert = function (test, message) {
+        };
+    }
 
     /**
-     * @interface
+     * @param {*} value
+     * @param {string} message
      */
-    util.Logger = function Logger() {
+    util.assertDefined = function (value, message) {
+        util.assert(util.isDefined(value), message);
     };
-
-    /**
-     * @type {function(...[*])}
-     */
-    util.Logger.prototype.log = function () {
-    };
-    /**
-     * @type {function(...[*])}
-     */
-    util.Logger.prototype.info = function () {
-    };
-    /**
-     * @type {function(...[*])}
-     */
-    util.Logger.prototype.warn = function () {
-    };
-    /**
-     * @type {function(...[*])}
-     */
-    util.Logger.prototype.error = function () {
-    };
-    /**
-     * @param {boolean} test
-     * @param {?string} message
-     */
-    util.Logger.prototype.assert = function (test, message) {
-    };
-
-    /**
-     * @constructor
-     * @implements {util.Logger}
-     */
-    util.ConsoleLogger = function ConsoleLogger() {
-    };
-
-    /**
-     * @inheritDoc
-     */
-    util.ConsoleLogger.prototype.log = function () {
-        console.log.apply(console, arguments);
-    };
-
-    /**
-     * @inheritDoc
-     */
-    util.ConsoleLogger.prototype.info = function () {
-        console.info.apply(console, arguments);
-    };
-
-    /**
-     * @inheritDoc
-     */
-    util.ConsoleLogger.prototype.warn = function () {
-        console.warn.apply(console, arguments);
-    };
-
-    /**
-     * @inheritDoc
-     */
-    util.ConsoleLogger.prototype.error = function () {
-        console.error.apply(console, arguments);
-    };
-
-    /**
-     * @inheritDoc
-     */
-    util.ConsoleLogger.prototype.assert = function (test, message) {
-        console.assert(test, message);
-    };
-
-    /**
-     * @constructor
-     * @implements {util.Logger}
-     */
-    util.NoopLogger = function NoopLogger() {
-    };
-
-    util.NoopLogger.prototype.log = function () {
-    };
-    util.NoopLogger.prototype.info = function () {
-    };
-    util.NoopLogger.prototype.warn = function () {
-    };
-    util.NoopLogger.prototype.error = function () {
-    };
-    util.NoopLogger.prototype.assert = function () {
-    };
-
-    /**
-     * @type {util.Logger}
-     */
-    util.logger = (function () {
-        if (DEBUG) return new util.ConsoleLogger();
-        return new util.NoopLogger();
-    })();
-
-    /**
-     * @type {function(this:util.Logger,boolean,string)}
-     */
-    util.assert = util.logger.assert.bind(util.logger);
 
     /**
      * @template A, B, C
@@ -117,6 +56,22 @@
         return function (a, b) {
             return func(b, a);
         }
+    };
+
+    /**
+     * @const
+     * @type {function()}
+     */
+    util.noop = function noop() {
+    };
+
+    /**
+     * @template T
+     * @param {T} x
+     * @return {T}
+     */
+    util.identity = function (x) {
+        return x;
     };
 
     /**
@@ -157,4 +112,62 @@
     util.isDefined = function (value) {
         return value !== void 0 && value !== null;
     };
+
+    /**
+     * @param {boolean=} s
+     * @return {string}
+     */
+    function guidPart(s) {
+        var p = (Math.random().toString(16) + "000000000").substr(2, 8);
+        return s ? "-" + p.substr(0, 4) + "-" + p.substr(4, 4) : p;
+    }
+
+    /**
+     * @return {string}
+     */
+    util.genUUID = function () {
+        return guidPart() + guidPart(true) + guidPart(true) + guidPart();
+    };
+
+    /**
+     * @template T
+     * @return {T}
+     */
+    util.emptyObject = function () {
+        return Object.create(null);
+    };
+
+    /**
+     * @param {function(?):string} typeExtractor
+     * @constructor
+     */
+    util.ReviversHolder = function (typeExtractor) {
+        /**
+         * @type {Object.<string, function(?):?>}
+         * @private
+         */
+        this._revivers = util.emptyObject();
+        this._typeExtractor = typeExtractor;
+    };
+
+    /**
+     * @param {string} type
+     * @param {function(?):?} reviver
+     */
+    util.ReviversHolder.prototype.registerReviver = function (type, reviver) {
+        this._revivers[type] = reviver;
+    };
+
+    /**
+     * @template T
+     * @param {T} object
+     * @return {T}
+     */
+    util.ReviversHolder.prototype.revive = function (object) {
+        var type = this._typeExtractor.call(null, object),
+            reviver = this._revivers[type];
+        util.assertDefined(type, "Bad object, type is not defined");
+        util.assertDefined(reviver, "Object has no registered reviver");
+        return reviver.call(null, object);
+    }
 })();

@@ -8,7 +8,7 @@
          * @type {Object.<string,Array.<function(...[*])>>}
          * @private
          */
-        this._handlers = Object.create(null);
+        this._handlers = util.emptyObject();
     };
 
     /**
@@ -47,7 +47,7 @@
             try {
                 handler.apply(this, data);
             } catch (err) {
-                util.logger.error("Error while processing event " + type + " with data ", data, err);
+                util.error("Error while processing event " + type + " with data ", data, err.message);
             }
         }, this);
     };

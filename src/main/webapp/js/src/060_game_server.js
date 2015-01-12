@@ -11,6 +11,16 @@
          * @private
          */
         this._clients = [];
+        /**
+         * @type {game.logic.Map}
+         * @private
+         */
+        this._map = new game.logic.Map([
+            new game.data.GameObject(null, new phys.Body(new geom.Vector(10, 240), new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440)),
+            new game.data.GameObject(null, new phys.Body(new geom.Vector(630, 240), new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440)),
+            new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 10), new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20)),
+            new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 470), new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20))
+        ]);
         initServerEvents.call(this);
     };
 
@@ -30,7 +40,7 @@
      */
     function onOpen(id) {
         this._clients.push(id);
-        sendClients.call(this, id);
+        sendInitialData.call(this, id);
         sendAll.call(this, new game.message.ConnectMessage(id), id);
     }
 
@@ -125,15 +135,37 @@
      * @this {game.server.GameServer}
      * @param {string} id
      */
-    function sendClients(id) {
+    function sendInitialData(id) {
         sendTo.call(this, id,
             new game.message.ClientListMessage(this._clients.filter(function (client) {
                 return client !== id;
             }))
         );
+        sendTo.call(this, id, new game.message.ObjectsCreationMessage(this._map.getObjectsSnapshot()));
     }
 
-    handlersHolder.registerHandler(game.message.DrawMessage.TYPE, function (message, id) {
-        sendAll.call(this, message, id);
-    });
+    handlersHolder.registerHandler(game.message.ObjectsModificationsMessage.TYPE,
+        /**
+         * @param {game.message.ObjectsModificationsMessage} message
+         * @param {string} id
+         */
+        function (message, id) {
+            this._map.applyModificationsBatch(message.batch);
+            var batch = this._map.validatePhysics();
+            sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
+        }
+    );
+
+    handlersHolder.registerHandler(game.message.ObjectsCreationMessage.TYPE,
+        /**
+         * @param {game.message.ObjectsCreationMessage} message
+         * @param {string} id
+         */
+        function (message, id) {
+            this._map.addObjects(message.objects);
+            var batch = this._map.validatePhysics();
+            sendAll.call(this, message);
+            sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
+        }
+    );
 })();

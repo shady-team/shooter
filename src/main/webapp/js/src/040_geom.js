@@ -85,7 +85,7 @@
      * @return {number}
      */
     geom.Vector.prototype.dot = function (v) {
-        return this.x * v.x + this.y + v.y;
+        return this.x * v.x + this.y * v.y;
     };
 
     /**
@@ -94,6 +94,24 @@
      */
     geom.Vector.prototype.cross = function (v) {
         return this.x * v.y - this.y * v.x;
+    };
+
+    /**
+     * @param {geom.Vector} v
+     * @return {boolean}
+     */
+    geom.Vector.prototype.approximatelyEqual = function (v) {
+        return Math.abs(this.x - v.x) < EPS && Math.abs(this.y - v.y) < EPS;
+    };
+
+
+    /**
+     * @static
+     * @param {geom.Vector} obj
+     * @return {geom.Vector}
+     */
+    geom.Vector.revive = function (obj) {
+        return new geom.Vector(obj.x, obj.y);
     };
 
     /**
@@ -129,7 +147,7 @@
     /**
      * @type {Object.<string, function(geom.Primitive,geom.Primitive):number>}
      */
-    var distanceCalculators = Object.create(null);
+    var distanceCalculators = util.emptyObject();
 
     /**
      * @param {string} a
@@ -158,7 +176,7 @@
      */
     geom.distance = function distance(a, b) {
         var calculator = distanceCalculators[pairDescriptor(a.descriptor, b.descriptor)];
-        util.assert(util.isDefined(calculator), "distance is not defined on pair of " + a.descriptor + " and " + b.descriptor);
+        util.assertDefined(calculator, "distance is not defined on pair of " + a.descriptor + " and " + b.descriptor);
         return calculator.call(null, a, b);
     };
 

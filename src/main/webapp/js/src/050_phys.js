@@ -1,22 +1,22 @@
 // requires util, geom
 (function () {
     /**
-     * @interface
+     * @constructor
      */
     phys.Shape = function Shape() {
+        /**
+         * @const {string}
+         */
+        this.descriptor = this.constructor.DESCRIPTOR;
     };
 
     /**
-     * @type {string}
-     */
-    phys.Shape.prototype.descriptor;
-
-    /**
      * @constructor
-     * @implements {phys.Shape}
+     * @extends {phys.Shape}
      * @param {number} radius
      */
     phys.Circle = function Circle(radius) {
+        phys.Shape.call(this);
         /**
          * @const
          * @type {number}
@@ -31,17 +31,22 @@
     phys.Circle.DESCRIPTOR = "circle";
 
     /**
-     * @const {string}
+     * @static
+     * @param {phys.Circle} obj
+     * @return {phys.Circle}
      */
-    phys.Circle.prototype.descriptor = phys.Circle.DESCRIPTOR;
+    phys.Circle.revive = function (obj) {
+        return new phys.Circle(obj.radius);
+    };
 
     /**
      * @constructor
-     * @implements {phys.Shape}
+     * @extends {phys.Shape}
      * @param {number} width
      * @param {number} height
      */
     phys.Rectangle = function Rectangle(width, height) {
+        phys.Shape.call(this);
         /**
          * @const
          * @type {number}
@@ -61,9 +66,26 @@
     phys.Rectangle.DESCRIPTOR = "rect";
 
     /**
-     * @const {string}
+     * @static
+     * @param {phys.Rectangle} obj
+     * @return {phys.Rectangle}
      */
-    phys.Rectangle.prototype.descriptor = phys.Rectangle.DESCRIPTOR;
+    phys.Rectangle.revive = function (obj) {
+        return new phys.Rectangle(obj.width, obj.height);
+    };
+
+    var reviversHolder = new util.ReviversHolder(
+        /**
+         * @param {phys.Shape} shape
+         * @return {string}
+         */
+        function (shape) {
+            return shape.descriptor;
+        }
+    );
+
+    reviversHolder.registerReviver(phys.Circle.DESCRIPTOR, phys.Circle.revive);
+    reviversHolder.registerReviver(phys.Rectangle.DESCRIPTOR, phys.Rectangle.revive);
 
     /**
      * @param {geom.Vector} position
@@ -76,6 +98,14 @@
         this.position = position;
         this.shape = shape;
         this.weight = weight;
+    };
+
+    /**
+     * @param {phys.Body} obj
+     * @return {phys.Body}
+     */
+    phys.reviveBody = function (obj) {
+        return new phys.Body(geom.Vector.revive(obj.position), reviversHolder.revive(obj.shape), obj.weight);
     };
 
     /**
@@ -136,7 +166,7 @@
             util.assert(a !== b, "colliding body with itself");
             var move = a.position.subtract(b.position),
                 delta = a.shape.radius + b.shape.radius - move.length();
-            if (delta <= 0) {
+            if (delta < EPS) {
                 return false;
             }
             applyForce(a, b, move.normalized().multiply(delta));
@@ -151,8 +181,12 @@
          * @return {boolean}
          */
         function (circ, rect) {
-            var move = circ.position.subtract(rect.position),
-                force = Math.abs(move.x) * rect.shape.height > Math.abs(move.y) * rect.shape.width
+            var move = circ.position.subtract(rect.position);
+            if (Math.abs(move.x) > circ.shape.radius + rect.shape.width / 2 - EPS
+                || Math.abs(move.y) > circ.shape.radius + rect.shape.height / 2 - EPS) {
+                return false;
+            }
+            var force = Math.abs(move.x) * rect.shape.height > Math.abs(move.y) * rect.shape.width
                     ? new geom.Vector(util.sign(move.x), 0)
                             .multiply(rect.shape.width / 2 - Math.abs(move.x) + circ.shape.radius)
                     : new geom.Vector(0, util.sign(move.y))
@@ -169,11 +203,11 @@
                 right = new geom.Segment(corners[1], corners[2]),
                 bottom = new geom.Segment(corners[2], corners[3]),
                 left = new geom.Segment(corners[3], corners[0]);
-            if ((Math.abs(move.x) <= rect.shape.width / 2 && Math.abs(move.y) <= rect.shape.height / 2) // center inside
-                || geom.distance(circ.position, top) < circ.shape.radius
-                || geom.distance(circ.position, right) < circ.shape.radius
-                || geom.distance(circ.position, bottom) < circ.shape.radius
-                || geom.distance(circ.position, left) < circ.shape.radius) {
+            if ((Math.abs(move.x) <= rect.shape.width / 2 - EPS && Math.abs(move.y) <= rect.shape.height / 2 - EPS) // center inside
+                || geom.distance(circ.position, top) < circ.shape.radius - EPS
+                || geom.distance(circ.position, right) < circ.shape.radius - EPS
+                || geom.distance(circ.position, bottom) < circ.shape.radius - EPS
+                || geom.distance(circ.position, left) < circ.shape.radius - EPS) {
                 applyForce(circ, rect, force);
                 return true;
             }
@@ -181,15 +215,39 @@
         }
     );
 
-    phys.simulate = function (bodies) {
-        var satisfied = false;
-        while (!satisfied) {
-            satisfied = true;
-            bodies.forEach(function (a) {
-                bodies.forEach(function (b) {
-                    satisfied &= a === b || phys.collide(a, b);
-                });
-            });
+    registerCollisionResolver(phys.Rectangle.DESCRIPTOR, phys.Rectangle.DESCRIPTOR,
+        /**
+         * @param {phys.Body.<phys.Rectangle>} a
+         * @param {phys.Body.<phys.Rectangle>} b
+         * @return {boolean}
+         */
+        function (a, b) {
+            // TODO
+            return false;
         }
+    );
+
+    /**
+     * @template T
+     * @param {Array.<T>} wrappers
+     * @param {function(T):phys.Body.<?>=} unwrapper
+     */
+    phys.simulate = function (wrappers, unwrapper) {
+        var satisfied = false,
+            iterations, i, j,
+            n = wrappers.length;
+        unwrapper = unwrapper || util.identity;
+        for (iterations = 0; !satisfied; iterations++) {
+            util.assert(iterations < 1000, "Too many iterations to satisfy constraints. Bug?");
+            satisfied = true;
+            for (i = 0; i < n; ++i) {
+                var a = unwrapper.call(null, wrappers[i]);
+                for (j = i + 1; j < n; ++j) {
+                    var b = unwrapper.call(null, wrappers[j]);
+                    satisfied &= !phys.collide(a, b);
+                }
+            }
+        }
+        util.log('physic simulation took ', iterations, ' iterations');
     };
 })();

@@ -81,7 +81,6 @@
     game.net.LocalServer = function LocalServer(connector) {
         this._connector = connector;
         this._opened = false;
-        connector.connectLocal(this);
     };
 
     game.net.LocalServer.prototype = new events.WithEvents();
@@ -102,6 +101,7 @@
         if (type === events.E_OPEN && !this._opened) {
             this._opened = true;
             handler.call(this);
+            this._connector.connectLocal(this);
         }
         events.WithEvents.prototype.on.call(this, type, handler);
     };
