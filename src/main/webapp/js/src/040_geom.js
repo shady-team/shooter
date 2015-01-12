@@ -65,11 +65,26 @@
     };
 
     /**
+     * @return {geom.Vector}
+     */
+    geom.Vector.prototype.negate = function () {
+        return new geom.Vector(-this.x, -this.y);
+    };
+
+    /**
      * @param {number} k
      * @return {geom.Vector}
      */
     geom.Vector.prototype.multiply = function (k) {
         return new geom.Vector(this.x * k, this.y * k);
+    };
+
+    /**
+     * @param {number} k
+     * @return {geom.Vector}
+     */
+    geom.Vector.prototype.divide = function (k) {
+        return new geom.Vector(this.x / k, this.y / k);
     };
 
     /**

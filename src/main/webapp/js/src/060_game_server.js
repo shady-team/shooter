@@ -22,6 +22,7 @@
             new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 470), new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20))
         ]);
         initServerEvents.call(this);
+        initGameLogic.call(this);
     };
 
     /**
@@ -151,8 +152,6 @@
          */
         function (message, id) {
             this._map.applyModificationsBatch(message.batch);
-            var batch = this._map.validatePhysics();
-            sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
         }
     );
 
@@ -163,9 +162,16 @@
          */
         function (message, id) {
             this._map.addObjects(message.objects);
-            var batch = this._map.validatePhysics();
             sendAll.call(this, message);
-            sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
         }
     );
+
+    function sendPhysicsUpdate(batch) {
+        sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
+    }
+
+    function initGameLogic() {
+        this._map.on(game.logic.E_OBJECTS_MODIFIED, sendPhysicsUpdate.bind(this));
+        this._map.startPhysics(20);
+    }
 })();

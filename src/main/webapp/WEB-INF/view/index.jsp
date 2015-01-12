@@ -31,6 +31,10 @@
             <canvas id="field" width="640" height="480"></canvas>
         </div>
 
+        <% if ("dev".equals(request.getParameter("mod"))) { %>
+        <script src="/js/script.js"></script>
+        <% } else { %>
         <script src="/js/script.min.js"></script>
+        <% } %>
     </body>
 </html>

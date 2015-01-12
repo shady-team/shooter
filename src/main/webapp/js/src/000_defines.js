@@ -1,5 +1,5 @@
 /** @define {boolean} */
-var DEBUG = false;
+var DEBUG = true;
 
 /** @const */
 var util = {};
@@ -25,3 +25,9 @@ var game = {
 
 /** @const {number} */
 var EPS = 1e-4;
+/** @const {number} */
+var PIXEL_PER_METER = 20;
+/** @const {number} */
+var G = PIXEL_PER_METER * 9.807;
+/** @const {number} */
+var RIGIDNESS = 100;

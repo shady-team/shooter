@@ -1,4 +1,6 @@
 // requires util, geom
+/** @typedef {{force:geom.Vector,impulse:geom.Vector}} */
+phys.CollisionEffect;
 (function () {
     /**
      * @constructor
@@ -96,7 +98,14 @@
      */
     phys.Body = function Body(position, shape, weight) {
         this.position = position;
+        /**
+         * @type {geom.Vector}
+         */
+        this.speed = geom.Vector.ZERO;
         this.shape = shape;
+        /**
+         * @type {number}
+         */
         this.weight = weight;
     };
 
@@ -106,6 +115,7 @@
     phys.Body.prototype.toJSON = function () {
         return {
             position: this.position,
+            speed: this.speed,
             shape: this.shape,
             weight: this.weight.toString() // because weight can be Infinite
         };
@@ -120,7 +130,7 @@
     };
 
     /**
-     * @type {Object.<string, function(phys.Body.<?>,phys.Body.<?>):boolean>}
+     * @type {Object.<string, function(phys.Body.<?>,phys.Body.<?>):phys.CollisionEffect>}
      */
     var collisionHandlers = Object.create(null);
 
@@ -134,21 +144,42 @@
     }
 
     /**
+     * @this {function(phys.Body.<?>,phys.Body.<?>):phys.CollisionEffect}
+     * @param {phys.Body.<?>} a
+     * @param {phys.Body.<?>} b
+     * @return {phys.CollisionEffect}
+     */
+    function swappedCollisionResolver(a, b) {
+        var result = this.call(null, b, a);
+        result.force = result.force.negate();
+        result.impulse = result.impulse.negate();
+        return result;
+    }
+
+    /**
      * @param {string} descriptorA
      * @param {string} descriptorB
-     * @param {function(phys.Body.<?>,phys.Body.<?>):boolean} resolver
+     * @param {function(phys.Body.<?>,phys.Body.<?>):phys.CollisionEffect} resolver
      */
     function registerCollisionResolver(descriptorA, descriptorB, resolver) {
         collisionHandlers[collisionKey(descriptorA, descriptorB)] = resolver;
         if (descriptorA !== descriptorB) {
-            collisionHandlers[collisionKey(descriptorB, descriptorA)] = util.swapBinary(resolver);
+            collisionHandlers[collisionKey(descriptorB, descriptorA)] = swappedCollisionResolver.bind(resolver);
         }
     }
 
     /**
+     * @type {phys.CollisionEffect}
+     */
+    var ZERO_COLLISION_EFFECT = {
+        force: geom.Vector.ZERO,
+        impulse: geom.Vector.ZERO
+    };
+
+    /**
      * @param {phys.Body.<?>} a
      * @param {phys.Body.<?>} b
-     * @return {boolean}
+     * @return {phys.CollisionEffect}
      */
     phys.collide = function collide(a, b) {
         var handler = collisionHandlers[collisionKey(a.shape.descriptor, b.shape.descriptor)];
@@ -156,32 +187,43 @@
     };
 
     /**
-     * @param {phys.Body.<?>} a
-     * @param {phys.Body.<?>} b
-     * @param {geom.Vector} force
+     * @param {phys.Body.<phys.Circle>} a
+     * @param {phys.Body.<phys.Circle>} b
+     * @param {geom.Vector} norm
+     * @return {geom.Vector}
      */
-    function applyForce(a, b, force) {
-        var aPart = 1 / (a.weight / b.weight + 1), // protected against Infinities
-            bPart = 1 / (b.weight / a.weight + 1);
-        a.position = a.position.add(force.multiply(aPart));
-        b.position = b.position.subtract(force.multiply(bPart));
+    function calcImpulse(a, b, norm) {
+        var impulse = geom.Vector.ZERO,
+            aImpulse = a.speed.dot(norm),
+            bImpulse = b.speed.dot(norm);
+        if (bImpulse > EPS) {
+            impulse = norm.multiply(bImpulse * b.weight);
+        }
+        if (aImpulse < EPS) {
+            impulse = impulse.subtract(norm.multiply(aImpulse * a.weight));
+        }
+        return impulse;
     }
 
     registerCollisionResolver(phys.Circle.DESCRIPTOR, phys.Circle.DESCRIPTOR,
         /**
          * @param {phys.Body.<phys.Circle>} a
          * @param {phys.Body.<phys.Circle>} b
-         * @return {boolean}
+         * @return {phys.CollisionEffect}
          */
         function (a, b) {
             util.assert(a !== b, "colliding body with itself");
             var move = a.position.subtract(b.position),
                 delta = a.shape.radius + b.shape.radius - move.length();
             if (delta < EPS) {
-                return false;
+                return ZERO_COLLISION_EFFECT;
             }
-            applyForce(a, b, move.normalized().multiply(delta));
-            return true;
+            var norm = move.normalized(),
+                force = norm.multiply(delta * RIGIDNESS);
+            return {
+                force: force,
+                impulse: calcImpulse(a, b, norm)
+            };
         }
     );
 
@@ -189,20 +231,15 @@
         /**
          * @param {phys.Body.<phys.Circle>} circ
          * @param {phys.Body.<phys.Rectangle>} rect
-         * @return {boolean}
+         * @return {phys.CollisionEffect}
          */
         function (circ, rect) {
             var move = circ.position.subtract(rect.position);
             if (Math.abs(move.x) > circ.shape.radius + rect.shape.width / 2 - EPS
                 || Math.abs(move.y) > circ.shape.radius + rect.shape.height / 2 - EPS) {
-                return false;
+                return ZERO_COLLISION_EFFECT;
             }
-            var force = Math.abs(move.x) * rect.shape.height > Math.abs(move.y) * rect.shape.width
-                    ? new geom.Vector(util.sign(move.x), 0)
-                            .multiply(rect.shape.width / 2 - Math.abs(move.x) + circ.shape.radius)
-                    : new geom.Vector(0, util.sign(move.y))
-                            .multiply(rect.shape.height / 2 - Math.abs(move.y) + circ.shape.radius),
-                diagLeft = new geom.Vector(-rect.shape.width / 2, -rect.shape.height / 2),
+            var diagLeft = new geom.Vector(-rect.shape.width / 2, -rect.shape.height / 2),
                 diagRight = new geom.Vector(rect.shape.width / 2, -rect.shape.height / 2),
                 corners = [
                     rect.position.add(diagLeft),
@@ -219,10 +256,20 @@
                 || geom.distance(circ.position, right) < circ.shape.radius - EPS
                 || geom.distance(circ.position, bottom) < circ.shape.radius - EPS
                 || geom.distance(circ.position, left) < circ.shape.radius - EPS) {
-                applyForce(circ, rect, force);
-                return true;
+                var norm, delta;
+                if (Math.abs(move.x) * rect.shape.height > Math.abs(move.y) * rect.shape.width) {
+                    norm = new geom.Vector(util.sign(move.x), 0);
+                    delta = rect.shape.width / 2 - Math.abs(move.x) + circ.shape.radius;
+                } else {
+                    norm = new geom.Vector(0, util.sign(move.y));
+                    delta = rect.shape.height / 2 - Math.abs(move.y) + circ.shape.radius;
+                }
+                return {
+                    force: norm.multiply(delta * RIGIDNESS),
+                    impulse: calcImpulse(circ, rect, norm)
+                };
             }
-            return false;
+            return ZERO_COLLISION_EFFECT;
         }
     );
 
@@ -230,35 +277,91 @@
         /**
          * @param {phys.Body.<phys.Rectangle>} a
          * @param {phys.Body.<phys.Rectangle>} b
-         * @return {boolean}
+         * @return {phys.CollisionEffect}
          */
         function (a, b) {
             // TODO
-            return false;
+            return ZERO_COLLISION_EFFECT;
         }
     );
 
     /**
+     * @param {number} gravity
+     * @param {number} cof
+     * @constructor
+     */
+    phys.World = function (gravity, cof) {
+        /**
+         * @const {number}
+         */
+        this.gravity = gravity;
+        /**
+         * @const {number}
+         */
+        this.cof = cof;
+    };
+
+    /**
+     * @this {phys.World}
      * @template T
      * @param {Array.<T>} wrappers
-     * @param {function(T):phys.Body.<?>=} unwrapper
+     * @param {function(T):phys.Body.<?>} unwrapper
+     * @param {number} time
      */
-    phys.simulate = function (wrappers, unwrapper) {
-        var satisfied = false,
-            iterations, i, j,
-            n = wrappers.length;
+    function applyFriction(wrappers, unwrapper, time) {
+        wrappers.forEach(function (wrapped) {
+            var unwrapeped = unwrapper.call(null, wrapped);
+            if (unwrapeped.speed.approximatelyEqual(geom.Vector.ZERO))
+                return;
+            var acceleration = unwrapeped.speed.normalized().multiply(this.cof * this.gravity),
+                newSpeed = unwrapeped.speed.subtract(acceleration.multiply(time));
+            if (unwrapeped.speed.dot(newSpeed) < EPS) {
+                unwrapeped.speed = geom.Vector.ZERO;
+            } else {
+                unwrapeped.speed = newSpeed;
+            }
+        }, this);
+    }
+
+    /**
+     * @this {phys.World}
+     * @template T
+     * @param {Array.<T>} wrappers
+     * @param {?function(T):phys.Body.<?>} unwrapper
+     * @param {number} time
+     */
+    function updatePositions(wrappers, unwrapper, time) {
+        wrappers.forEach(function (wrapped) {
+            var unwrapped = unwrapper.call(null, wrapped);
+            unwrapped.position = unwrapped.position.add(unwrapped.speed.multiply(time));
+        }, this);
+    }
+
+    /**
+     * @template T
+     * @param {Array.<T>} wrappers
+     * @param {?function(T):phys.Body.<?>} unwrapper
+     * @param {number} time
+     */
+    phys.World.prototype.simulate = function (wrappers, unwrapper, time) {
+        var i, j,
+            n = wrappers.length,
+            impulses = util.arrayOf(n, geom.Vector.ZERO);
         unwrapper = unwrapper || util.identity;
-        for (iterations = 0; !satisfied; iterations++) {
-            util.assert(iterations < 1000, "Too many iterations to satisfy constraints. Bug?");
-            satisfied = true;
-            for (i = 0; i < n; ++i) {
-                var a = unwrapper.call(null, wrappers[i]);
-                for (j = i + 1; j < n; ++j) {
-                    var b = unwrapper.call(null, wrappers[j]);
-                    satisfied &= !phys.collide(a, b);
-                }
+        applyFriction.call(this, wrappers, unwrapper, time);
+        for (i = 0; i < n; ++i) {
+            var a = unwrapper.call(null, wrappers[i]);
+            for (j = i + 1; j < n; ++j) {
+                var b = unwrapper.call(null, wrappers[j]);
+                var effect = phys.collide(a, b);
+                impulses[i] = impulses[i].add(effect.impulse).add(effect.force.multiply(time));
+                impulses[j] = impulses[j].subtract(effect.impulse).subtract(effect.force.multiply(time));
             }
         }
-        util.log('physic simulation took ', iterations, ' iterations');
+        for (i = 0; i < n; ++i) {
+            var unwrapped = unwrapper.call(null, wrappers[i]);
+            unwrapped.speed = unwrapped.speed.add(impulses[i].divide(unwrapped.weight));
+        }
+        updatePositions.call(this, wrappers, unwrapper, time);
     };
 })();

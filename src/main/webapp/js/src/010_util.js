@@ -138,6 +138,35 @@
     };
 
     /**
+     * @template T
+     * @param {number} n
+     * @param {T|function(number):T=} provider
+     * @return {Array.<T>}
+     */
+    util.arrayOf = function (n, provider) {
+        var result = [], i;
+        for (i = 0; i < n; ++i) {
+            if (util.isFunction(provider)) {
+                result.push(provider.call(null, i));
+            } else {
+                result.push(provider);
+            }
+        }
+        return result;
+    };
+
+    /**
+     * @param {*} object
+     * @return {boolean}
+     */
+    util.isObjectEmpty = function (object) {
+        for (var prop in object) {
+            return false;
+        }
+        return true;
+    };
+
+    /**
      * @param {function(?):string} typeExtractor
      * @constructor
      */

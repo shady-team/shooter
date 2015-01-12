@@ -1,8 +1,9 @@
-// requires util
+// requires util, phys
 (function () {
     /**
      * @param {Array.<game.data.GameObject>} objects
      * @constructor
+     * @extends {events.WithEvents}
      */
     game.logic.Map = function (objects) {
         /**
@@ -15,8 +16,27 @@
          * @private
          */
         this._idToObject = util.emptyObject();
+        /**
+         * @type {?number}
+         * @private
+         */
+        this._timer = null;
+        /**
+         * @type {?number}
+         * @private
+         */
+        this._lastUpdate = null;
+        /**
+         * @type {phys.World}
+         * @private
+         */
+        this._world = new phys.World(G, 0.5);
         objects.forEach(putToMap, this);
     };
+
+    game.logic.Map.prototype = new events.WithEvents();
+
+    game.logic.E_OBJECTS_MODIFIED = 'objects_modified';
 
     function putToMap(object) {
         this._idToObject[object.id] = object;
@@ -63,30 +83,35 @@
         return object.body;
     }
 
-    /**
-     * @return {game.data.ModificationsBatch}
-     */
     game.logic.Map.prototype.validatePhysics = function () {
-        var oldPositions = {},
-            batchBuilder = game.data.buildModificationsBatch();
-        this._objects.forEach(function (object) {
-            oldPositions[object.id] = object.body.position;
-        });
-        phys.simulate(this._objects, unwrapGameObject);
-        this._objects.forEach(function (object) {
-            var id = object.id,
-                oldPosition = oldPositions[id],
-                newPosition = object.body.position;
-            if (!oldPosition.approximatelyEqual(newPosition)) {
-                batchBuilder.add(
-                    id,
-                    game.data.buildModification()
-                        .setPosition(newPosition)
-                        .build()
-                );
+        var now = Date.now();
+        if (util.isDefined(this._lastUpdate)) {
+            var oldPositions = {},
+                batchBuilder = game.data.buildModificationsBatch(),
+                batch;
+            this._objects.forEach(function (object) {
+                oldPositions[object.id] = object.body.position;
+            });
+            this._world.simulate(this._objects, unwrapGameObject, (now - this._lastUpdate) / 1000);
+            this._objects.forEach(function (object) {
+                var id = object.id,
+                    oldPosition = oldPositions[id],
+                    newPosition = object.body.position;
+                if (!oldPosition.approximatelyEqual(newPosition)) {
+                    batchBuilder.add(
+                        id,
+                        game.data.buildModification()
+                            .setPosition(newPosition)
+                            .build()
+                    );
+                }
+            });
+            batch = batchBuilder.build();
+            if (!util.isObjectEmpty(batch)) {
+                this.fire(game.logic.E_OBJECTS_MODIFIED, batch);
             }
-        });
-        return batchBuilder.build();
+        }
+        this._lastUpdate = now;
     };
 
     /**
@@ -94,5 +119,21 @@
      */
     game.logic.Map.prototype.getObjectsSnapshot = function () {
         return this._objects.slice();
+    };
+
+    /**
+     * @param {number} delay
+     */
+    game.logic.Map.prototype.startPhysics = function (delay) {
+        if (!this._timer) {
+            this._timer = setInterval(this.validatePhysics.bind(this), delay)
+        }
+    };
+
+    game.logic.Map.prototype.stopPhysics = function () {
+        if (this._timer) {
+            clearInterval(this._timer);
+            this._timer = null;
+        }
     }
 })();
