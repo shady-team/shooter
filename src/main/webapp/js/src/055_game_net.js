@@ -39,12 +39,13 @@
      * @extends {game.net.Server}
      */
     game.net.RemoteServer = function RemoteServer(connector, serverId) {
+        events.WithEvents.call(this);
         this._connector = connector;
         this._server = serverId;
         initRemoteServerEvents.call(this);
     };
 
-    game.net.RemoteServer.prototype = new events.WithEvents();
+    game.net.RemoteServer.prototype = Object.create(events.WithEvents.prototype);
 
     /**
      * @this {game.net.RemoteServer}
@@ -79,11 +80,12 @@
      * @extends {game.net.Server}
      */
     game.net.LocalServer = function LocalServer(connector) {
+        events.WithEvents.call(this);
         this._connector = connector;
         this._opened = false;
     };
 
-    game.net.LocalServer.prototype = new events.WithEvents();
+    game.net.LocalServer.prototype = Object.create(events.WithEvents.prototype);
 
     /**
      * @param {Object} message
@@ -112,6 +114,7 @@
      * @extends {game.net.Connector}
      */
     game.net.WebRTCConnectorAdapter = function WebRTCConnectorAdapter(webRtc) {
+        events.WithEvents.call(this);
         this._rtc = webRtc;
         /**
          * @type {game.net.LocalServer}
@@ -121,7 +124,7 @@
         initAdapterEvents.call(this);
     };
 
-    game.net.WebRTCConnectorAdapter.prototype = new events.WithEvents();
+    game.net.WebRTCConnectorAdapter.prototype = Object.create(events.WithEvents.prototype);
 
     /**
      * @this {game.net.WebRTCConnectorAdapter}

@@ -6,6 +6,7 @@
      * @extends {events.WithEvents}
      */
     game.logic.Map = function (objects) {
+        events.WithEvents.call(this);
         /**
          * @type {Array.<game.data.GameObject>}
          * @private
@@ -34,7 +35,7 @@
         objects.forEach(putToMap, this);
     };
 
-    game.logic.Map.prototype = new events.WithEvents();
+    game.logic.Map.prototype = Object.create(events.WithEvents.prototype);
 
     game.logic.E_OBJECTS_MODIFIED = 'objects_modified';
 

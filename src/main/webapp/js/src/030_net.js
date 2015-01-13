@@ -97,6 +97,7 @@
      * @extends {events.WithEvents}
      */
     net.WebRTC = function WebRTC(observer) {
+        events.WithEvents.call(this);
         this._observer = observer;
         /**
          * @type {Object.<string, RTCPeerConnection>}
@@ -121,7 +122,7 @@
         };
     };
 
-    net.WebRTC.prototype = new events.WithEvents();
+    net.WebRTC.prototype = Object.create(events.WithEvents.prototype);
 
     /**
      * @param {string} peerId
