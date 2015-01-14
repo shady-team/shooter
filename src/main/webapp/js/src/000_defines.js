@@ -10,6 +10,8 @@ var net = {};
 /** @const */
 var geom = {};
 /** @const */
+var input = {};
+/** @const */
 var phys = {};
 /** @const */
 var visual = {};

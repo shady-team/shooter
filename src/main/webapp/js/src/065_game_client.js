@@ -1,4 +1,4 @@
-// requires game.net, game.message
+// requires input, game.net, game.message
 (function () {
     /**
      * @param {game.net.Server} server
@@ -10,6 +10,7 @@
         this._canvas = canvas;
         this._scene = new visual.Scene(canvas.getContext("2d"));
         this._map = new game.logic.Map([]);
+        this._inputHandler = new input.InputHandler();
 
         initCanvas.call(this);
         initCanvasEvents.call(this);
@@ -29,16 +30,18 @@
      * @this {game.client.GameClient}
      */
     function initCanvasEvents() {
-        var canvas = this._canvas,
+        var handler = this._inputHandler,
+            canvas = this._canvas,
             server = this._server;
-        canvas.addEventListener('click', function (evt) {
-            var x = evt.offsetX,
-                y = evt.offsetY,
-                position = new geom.Vector(x, y);
+        handler.on(input.E_MOUSE_UP, function(x, y, button) {
+            if (button !== input.Button.LEFT)
+                return;
+            var position = new geom.Vector(x, y);
             server.send(new game.message.ObjectsCreationMessage([
                 new game.data.GameObject(null, new phys.Body(position, new phys.Circle(30), 1), new visual.Circle(30))
             ]));
         });
+        handler.attachTo(canvas);
     }
 
     /**

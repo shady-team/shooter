@@ -48,6 +48,14 @@
     };
 
     /**
+     * @param {*} value
+     * @param {string} message
+     */
+    util.assertUndefined = function (value, message) {
+        util.assert(!util.isDefined(value), message);
+    };
+
+    /**
      * @template A, B, C
      * @param {function(A,B):C} func
      * @return {function(B,A):C}
