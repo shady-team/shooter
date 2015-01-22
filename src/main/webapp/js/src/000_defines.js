@@ -36,6 +36,6 @@ var G = PIXEL_PER_METER * 9.807;
 /** @const {number} */
 var RIGIDNESS = 100;
 /** @const {boolean} */
-var WEB_GL_DEBUG = true;
+var WEB_GL_DEBUG = false;
 /** @const {number} */
 var CIRCLE_EDGE_PIXEL_LENGTH = 5;
