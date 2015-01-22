@@ -16,10 +16,14 @@
          * @private
          */
         this._map = new game.logic.Map([
-            new game.data.GameObject(null, new phys.Body(new geom.Vector(10, 240), new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440)),
-            new game.data.GameObject(null, new phys.Body(new geom.Vector(630, 240), new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440)),
-            new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 10), new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20)),
-            new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 470), new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20))
+            new game.data.GameObject(null, new phys.Body(new geom.Vector(10, 240),
+                new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
+            new game.data.GameObject(null, new phys.Body(new geom.Vector(630, 240),
+                new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
+            new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 10),
+                new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
+            new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 470),
+                new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR))
         ]);
         initServerEvents.call(this);
         initGameLogic.call(this);

@@ -6,6 +6,8 @@
      * @constructor
      */
     game.client.GameClient = function GameClient(server, canvas) {
+        webgl.setupWebGL(canvas);
+
         this._server = server;
         this._canvas = canvas;
         this._scene = new visual.Scene(canvas.getContext("2d"));
@@ -38,7 +40,8 @@
                 return;
             var position = new geom.Vector(x, y);
             server.send(new game.message.ObjectsCreationMessage([
-                new game.data.GameObject(null, new phys.Body(position, new phys.Circle(30), 1), new visual.Circle(30))
+                new game.data.GameObject(null, new phys.Body(position,
+                    new phys.Circle(30), 1), new visual.Circle(30, webgl.BLUE_COLOR))
             ]));
         });
         handler.attachTo(canvas);
@@ -55,7 +58,7 @@
 
     /**
      * @param {game.data.GameObject} object
-     * @return {visual.Mesh}
+     * @return {visual.TrianglesMesh}
      */
     function unwrapMesh(object) {
         return object.mesh;

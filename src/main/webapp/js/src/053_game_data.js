@@ -6,7 +6,7 @@ game.data.ModificationsBatch;
     /**
      * @param {?string} id
      * @param {phys.Body.<?>} body
-     * @param {visual.Mesh} mesh
+     * @param {visual.TrianglesMesh} mesh
      * @constructor
      */
     game.data.GameObject = function (id, body, mesh) {

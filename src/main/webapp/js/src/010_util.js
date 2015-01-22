@@ -206,5 +206,25 @@
         util.assertDefined(type, "Bad object, type is not defined");
         util.assertDefined(reviver, "Object has no registered reviver");
         return reviver.call(null, object);
-    }
+    };
+
+    Uint16Array.prototype.max = function () {//TODO: function with arg
+        var max = this[0];
+        for (var i = 1; i < this.length; i++) {
+            if (this[i] > max) {
+                max = this[i];
+            }
+        }
+        return max;
+    };
+
+    Uint16Array.prototype.min = function () {
+        var min = this[0];
+        for (var i = 1; i < this.length; i++) {
+            if (this[i] < min) {
+                min = this[i];
+            }
+        }
+        return min;
+    };
 })();

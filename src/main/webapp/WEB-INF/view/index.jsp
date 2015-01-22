@@ -33,6 +33,7 @@
 
         <% if ("dev".equals(request.getParameter("mod"))) { %>
         <script src="/js/script.js"></script>
+        <script src="/js/webgl-debug.js"></script>
         <% } else { %>
         <script src="/js/script.min.js"></script>
         <% } %>

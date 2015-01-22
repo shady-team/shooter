@@ -16,6 +16,8 @@ var phys = {};
 /** @const */
 var visual = {};
 /** @const */
+var webgl = {};
+/** @const */
 var game = {
     data: {},
     net: {},
@@ -33,3 +35,7 @@ var PIXEL_PER_METER = 20;
 var G = PIXEL_PER_METER * 9.807;
 /** @const {number} */
 var RIGIDNESS = 100;
+/** @const {boolean} */
+var WEB_GL_DEBUG = true;
+/** @const {number} */
+var CIRCLE_EDGE_PIXEL_LENGTH = 5;
