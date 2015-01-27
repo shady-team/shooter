@@ -15,27 +15,27 @@
             [gl.TEXTURE_MAG_FILTER, gl.NEAREST]];
     }
 
-    var _coloredPolygonVShader = "\
-    attribute vec2 position;\
-    attribute vec4 color;\
-    \
-    varying vec4 v_color;\
-    \
-    void main()\
-    {\
-        gl_Position = vec4(position, 0.0, 1.0);\
-        v_color = color;\
-    }";
+    var _coloredPolygonVShader = "" +
+        "attribute vec2 position;" +
+        "attribute vec4 color;" +
+        "" +
+        "varying vec4 v_color;" +
+        "" +
+        "void main()" +
+        "{" +
+        "    gl_Position = vec4(position, 0.0, 1.0);" +
+        "    v_color = color;" +
+        "}";
 
-    var _coloredPolygonFShader = "\
-    precision mediump float;\
-    \
-    varying vec4 v_color;\
-    \
-    void main()\
-    {\
-        gl_FragColor = v_color;\
-    }";
+    var _coloredPolygonFShader = "" +
+        "precision mediump float;" +
+        "" +
+        "varying vec4 v_color;" +
+        "" +
+        "void main()" +
+        "{" +
+        "    gl_FragColor = v_color;" +
+        "}";
 
     function _initColoredPolygonProgram() {
         webgl.coloredPolygonProgram = webgl.build_program(_coloredPolygonVShader, _coloredPolygonFShader);
