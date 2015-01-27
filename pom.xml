@@ -31,35 +31,11 @@
                     <artifactId>maven-war-plugin</artifactId>
                     <configuration>
                         <failOnMissingWebXml>false</failOnMissingWebXml>
-                        <warSourceExcludes>js/src/**</warSourceExcludes>
                     </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
-            <plugin>
-                <groupId>com.samaxes.maven</groupId>
-                <artifactId>minify-maven-plugin</artifactId>
-                <version>1.7.4</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>minify</goal>
-                        </goals>
-                        <configuration>
-                            <charset>UTF-8</charset>
-                            <jsSourceIncludes>
-                                <jsSourceInclude>**</jsSourceInclude>
-                            </jsSourceIncludes>
-                            <closureUseDefaultExterns>true</closureUseDefaultExterns>
-                            <closureCreateSourceMap>true</closureCreateSourceMap>
-                            <closureLanguage>ECMASCRIPT5</closureLanguage>
-                            <jsEngine>CLOSURE</jsEngine>
-                            <closureCompilationLevel>ADVANCED_OPTIMIZATIONS</closureCompilationLevel>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
@@ -119,6 +95,12 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.javascript</groupId>
+            <artifactId>closure-compiler</artifactId>
+            <version>v20141215</version>
         </dependency>
 
         <dependency>

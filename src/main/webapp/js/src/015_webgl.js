@@ -39,7 +39,7 @@
 
     function _initColoredPolygonProgram() {
         webgl.coloredPolygonProgram = webgl.build_program(_coloredPolygonVShader, _coloredPolygonFShader);
-        gl_program = webgl.coloredPolygonProgram;
+        var gl_program = webgl.coloredPolygonProgram;
 
         gl.useProgram(gl_program);
         gl_program.positionAttrib = gl.getAttribLocation(gl_program, 'position');

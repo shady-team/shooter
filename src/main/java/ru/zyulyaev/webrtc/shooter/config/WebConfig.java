@@ -1,5 +1,6 @@
 package ru.zyulyaev.webrtc.shooter.config;
 
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.servlet.config.annotation.*;
@@ -10,6 +11,7 @@ import org.springframework.web.servlet.config.annotation.*;
 @Configuration
 @EnableWebMvc
 @Import(WebSocketConfig.class)
+@ComponentScan("ru.zyulyaev.webrtc.shooter.contollers")
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
