@@ -1,4 +1,10 @@
-// requires util, geom, phys, visual
+goog.provide('game.data');
+
+goog.require('util');
+goog.require('geom');
+goog.require('phys');
+goog.require('visual');
+
 /** @typedef {Object.<string,game.data.GameObjectModification>} */
 game.data.ModificationsBatch;
 

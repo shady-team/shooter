@@ -1,6 +1,14 @@
-// requires util, geom
+goog.provide('phys');
+
+goog.require('util');
+goog.require('geom');
+
 /** @typedef {{force:geom.Vector,impulse:geom.Vector}} */
 phys.CollisionEffect;
+
+/** @const {number} */
+var RIGIDNESS = 100;
+
 (function () {
     /**
      * @constructor

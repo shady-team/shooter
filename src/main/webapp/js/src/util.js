@@ -1,3 +1,8 @@
+goog.provide('util');
+
+/** @define {boolean} */
+var DEBUG = true;
+
 (function () {
     if (DEBUG) {
         /** @type {function(...[*])} */

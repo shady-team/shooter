@@ -1,4 +1,10 @@
-// requires util
+goog.provide('geom');
+
+goog.require('util');
+
+/** @const {number} */
+var EPS = 1e-4;
+
 (function () {
     /**
      * @interface

@@ -1,4 +1,8 @@
-// requires util
+goog.provide('game.message');
+
+goog.require('util');
+goog.require('game.data');
+
 (function () {
     /**
      * @constructor

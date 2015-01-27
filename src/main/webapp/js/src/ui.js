@@ -1,4 +1,7 @@
-// requires net, game.server, game.client
+goog.require('net');
+goog.require('game.client');
+goog.require('game.server');
+
 (function () {
     var observer, webRtc, server,
         field = /** @type {HTMLCanvasElement} */ (document.getElementById("field")),

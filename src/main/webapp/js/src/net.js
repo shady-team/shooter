@@ -1,4 +1,8 @@
-// requires util, events
+goog.provide('net');
+
+goog.require('util');
+goog.require('events');
+
 (function () {
     var /** @const */ E_ICE = 'ice',
         /** @const */ E_OFFER = 'offer',

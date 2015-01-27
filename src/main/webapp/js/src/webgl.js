@@ -1,4 +1,10 @@
-// requires util
+goog.provide('webgl');
+
+goog.require('util');
+
+/** @const {boolean} */
+var WEB_GL_DEBUG = false;
+
 (function () {
 
     /** @type {WebGLRenderingContext} */

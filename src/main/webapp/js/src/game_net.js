@@ -1,3 +1,7 @@
+goog.provide('game.net');
+
+goog.require('net');
+
 (function () {
     /** @const */
     var ID_SELF = "@self";

@@ -1,4 +1,8 @@
-// requires util, events
+goog.provide('input');
+
+goog.require('util');
+goog.require('events');
+
 (function () {
     /**
      * @constructor

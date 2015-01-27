@@ -1,4 +1,12 @@
-// requires input, game.net, game.message
+goog.provide('game.client');
+
+goog.require('util');
+goog.require('input');
+goog.require('game.data');
+goog.require('game.net');
+goog.require('game.message');
+goog.require('game.logic');
+
 (function () {
     /**
      * @param {game.net.Server} server

@@ -1,4 +1,11 @@
-// requires util, game.net, game.message
+goog.provide('game.server');
+
+goog.require('util');
+goog.require('game.data');
+goog.require('game.net');
+goog.require('game.message');
+goog.require('game.logic');
+
 (function () {
     /**
      * @param {game.net.Connector} connector

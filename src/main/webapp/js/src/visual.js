@@ -1,4 +1,12 @@
-// requires util, geom, webgl
+goog.provide('visual');
+
+goog.require('util');
+goog.require('geom');
+goog.require('webgl');
+
+/** @const {number} */
+var CIRCLE_EDGE_PIXEL_LENGTH = 5;
+
 (function () {
     /**
      * @constructor
@@ -123,7 +131,7 @@
          */
         this.color = color;
 
-        var pixels_perimeter = 2 * Math.PI * PIXEL_PER_METER;
+        var pixels_perimeter = 2 * Math.PI * radius;
         var segments_count = Math.max(5, Math.round(pixels_perimeter / CIRCLE_EDGE_PIXEL_LENGTH));
         var vertices_count = segments_count + 1;
 

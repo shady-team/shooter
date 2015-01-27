@@ -1,4 +1,7 @@
-// requires util
+goog.provide('events');
+
+goog.require('util');
+
 (function () {
 
     /**
@@ -47,6 +50,8 @@
         this.lastNotificationTime = eventTime;
     };
 
+    var minTimeout = 15;
+
     /**
      * @constructor
      */
@@ -61,8 +66,8 @@
          * @private
          */
         this._whileKeyDownHandlers = util.emptyObject();
-        this._minTimeout = 15;
-        window.setTimeout(this._createRepeatedCallbackCall(), this._minTimeout);
+
+        setInterval(repeatedCallback.bind(this), minTimeout); // todo save setInterval return value for clearInterval
     };
 
     /**
@@ -126,14 +131,7 @@
         }
     };
 
-    events.WithEvents.prototype._createRepeatedCallbackCall = function () {
-        var that = this;
-        return function () {
-            that._repeatedCallback();
-        };
-    };
-
-    events.WithEvents.prototype._repeatedCallback = function () {
+    function repeatedCallback() {
         var currentTime = new Date().getTime();
         for (var type in this._whileKeyDownHandlers) {
             var handlers = this._whileKeyDownHandlers[type];
@@ -141,8 +139,7 @@
                 handler.handle(currentTime);
             }, this);
         }
-        window.setTimeout(this._createRepeatedCallbackCall(), this._minTimeout);
-    };
+    }
 
     /**
      * @param {number} keyCode

@@ -1,4 +1,15 @@
-// requires util, phys
+goog.provide('game.logic');
+
+goog.require('util');
+goog.require('phys');
+goog.require('game.data');
+goog.require('game.logic');
+
+/** @const {number} */
+var PIXEL_PER_METER = 20;
+/** @const {number} */
+var G = PIXEL_PER_METER * 9.807;
+
 (function () {
     /**
      * @param {Array.<game.data.GameObject>} objects
