@@ -10,9 +10,11 @@
 
         this._server = server;
         this._canvas = canvas;
+        this._window = window;
         this._scene = new visual.Scene(canvas.getContext("2d"));
         this._map = new game.logic.Map([]);
-        this._inputHandler = new input.InputHandler();
+        this._mouseInputHandler = new input.InputHandler();
+        this._keyboardInputHandler = new input.InputHandler();
 
         initCanvas.call(this);
         initCanvasEvents.call(this);
@@ -32,19 +34,32 @@
      * @this {game.client.GameClient}
      */
     function initCanvasEvents() {
-        var handler = this._inputHandler,
+        var mouseHandler = this._mouseInputHandler,
+            keyboardHandler = this._keyboardInputHandler,
             canvas = this._canvas,
+            window = this._window,
             server = this._server;
-        handler.on(input.E_MOUSE_UP, function(x, y, button) {
+
+        var lastGameObject = null;
+
+        mouseHandler.on(events.E_MOUSE_UP, function (x, y, button) {
             if (button !== input.Button.LEFT)
                 return;
             var position = new geom.Vector(x, y);
-            server.send(new game.message.ObjectsCreationMessage([
-                new game.data.GameObject(null, new phys.Body(position,
-                    new phys.Circle(30), 1), new visual.Circle(30, webgl.BLUE_COLOR))
-            ]));
+            var newGameObject = new game.data.GameObject(null, new phys.Body(position,
+                new phys.Circle(30), 1), new visual.Circle(30, webgl.BLUE_COLOR));
+            server.send(new game.message.ObjectsCreationMessage([newGameObject]));
+            lastGameObject = newGameObject;
         });
-        handler.attachTo(canvas);
+
+        keyboardHandler.registerWhileKeyDown(input.KEY_SPACE, 1000 / 60, function (deltaTime, timeFromKeyDown) {
+            var speed = new geom.Vector(0, 0.1);
+            lastGameObject.body.position = lastGameObject.body.position.add(speed.multiply(deltaTime));
+            server.send(new game.message.ObjectsModificationsMessage([lastGameObject]));
+        });
+
+        mouseHandler.attachTo(canvas);
+        keyboardHandler.attachTo(window);
     }
 
     /**

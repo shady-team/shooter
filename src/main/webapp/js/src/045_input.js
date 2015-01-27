@@ -27,6 +27,24 @@
     };
 
     /**
+     * @constructor
+     */
+    input.KeyboardState = function () {
+        /**
+         * @type {boolean}
+         */
+        this.altKey = false;
+        /**
+         * @type {boolean}
+         */
+        this.ctrlKey = false;
+        /**
+         * @type {boolean}
+         */
+        this.shiftKey = false;
+    };
+
+    /**
      * @param {input.MouseState} state
      * @param {MouseEvent} evt
      */
@@ -71,6 +89,17 @@
     };
 
     /**
+     * @param {input.KeyboardState} state
+     * @param {KeyboardEvent} evt
+     * @param {boolean} isKeyDown
+     */
+    function updateKeyboardState(state, evt, isKeyDown) {
+        state.altKey = evt.altKey;
+        state.shiftKey = evt.shiftKey;
+        state.ctrlKey = evt.ctrlKey;
+    }
+
+    /**
      * @constructor
      * @extends {events.WithEvents}
      */
@@ -91,6 +120,11 @@
          * @private
          */
         this._mouseState = new input.MouseState();
+        /**
+         * @type {input.KeyboardState}
+         * @private
+         */
+        this._keyboardState = new input.KeyboardState();
     };
 
     input.InputHandler.prototype = Object.create(events.WithEvents.prototype);
@@ -102,6 +136,8 @@
         'mousedown': mouseDownHandler,
         'mousemove': mouseMoveHandler,
         'mouseup': mouseUpHandler,
+        'keyup': keyUpHandler,
+        'keydown': keyDownHandler,
         'contextmenu': util.noop
     };
 
@@ -135,7 +171,7 @@
      */
     function mouseDownHandler(evt) {
         updateMouseState(this._mouseState, evt);
-        this.fire(input.E_MOUSE_DOWN, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
+        this.fire(events.E_MOUSE_DOWN, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
     }
 
     /**
@@ -144,7 +180,25 @@
      */
     function mouseUpHandler(evt) {
         updateMouseState(this._mouseState, evt);
-        this.fire(input.E_MOUSE_UP, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
+        this.fire(events.E_MOUSE_UP, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
+    }
+
+    /**
+     * @this {input.InputHandler}
+     * @param {KeyboardEvent} evt
+     */
+    function keyDownHandler(evt) {
+        updateKeyboardState(this._keyboardState, evt, true);
+        this.fire(events.E_KEY_DOWN + evt.keyCode);
+    }
+
+    /**
+     * @this {input.InputHandler}
+     * @param {KeyboardEvent} evt
+     */
+    function keyUpHandler(evt) {
+        updateKeyboardState(this._keyboardState, evt, false);
+        this.fire(events.E_KEY_UP + evt.keyCode);
     }
 
     /**
@@ -153,7 +207,7 @@
      */
     function mouseMoveHandler(evt) {
         updateMouseState(this._mouseState, evt);
-        this.fire(input.E_MOUSE_MOVE, this.getAbsoluteX(), this.getAbsoluteY(), this.getRelativeX(), this.getRelativeY());
+        this.fire(events.E_MOUSE_MOVE, this.getAbsoluteX(), this.getAbsoluteY(), this.getRelativeX(), this.getRelativeY());
     }
 
     /**
@@ -185,6 +239,18 @@
         return (this._mouseState.buttons & (1 << button)) !== 0;
     };
 
+    input.InputHandler.prototype.isAltDown = function () {
+        return this._keyboardState.altKey;
+    };
+
+    input.InputHandler.prototype.isCtrlDown = function () {
+        return this._keyboardState.ctrlKey;
+    };
+
+    input.InputHandler.prototype.isShiftDown = function () {
+        return this._keyboardState.shiftKey;
+    };
+
     /**
      * @return {number}
      */
@@ -213,10 +279,5 @@
         return this._mouseState.relY;
     };
 
-    /** @const {string} */
-    input.E_MOUSE_DOWN = 'mouseDown';
-    /** @const {string} */
-    input.E_MOUSE_MOVE = 'mouseMove';
-    /** @const {string} */
-    input.E_MOUSE_UP = 'mouseUp';
+    input.KEY_SPACE = 32;
 })();
