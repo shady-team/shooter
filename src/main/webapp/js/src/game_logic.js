@@ -48,12 +48,23 @@ var G = PIXEL_PER_METER * 9.807;
 
     game.logic.Map.prototype = Object.create(events.WithEvents.prototype);
 
+    /**
+     * @const {string}
+     */
     game.logic.E_OBJECTS_MODIFIED = 'objects_modified';
 
+    /**
+     * @this {game.logic.Map}
+     * @param {game.data.GameObject} object
+     */
     function putToMap(object) {
         this._idToObject[object.id] = object;
     }
 
+    /**
+     * @this {game.logic.Map}
+     * @param {game.data.GameObject} object
+     */
     function removeFromMap(object) {
         delete this._idToObject[object.id];
     }

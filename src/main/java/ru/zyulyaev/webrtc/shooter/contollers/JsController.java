@@ -31,20 +31,25 @@ public class JsController {
     @ResponseBody
     @Cacheable("script.min.js")
     public String minifiedJs() throws IOException {
-        return compile(CompilationLevel.ADVANCED_OPTIMIZATIONS);
+        return compile(false);
     }
 
     @RequestMapping(value = "/js/script.js", method = RequestMethod.GET, produces = "application/javascript")
     @ResponseBody
     @Cacheable("script.js")
     public String nonMinifiedJs() throws IOException {
-        return compile(CompilationLevel.WHITESPACE_ONLY);
+        return compile(true);
     }
 
-    private String compile(CompilationLevel compilationLevel) throws IOException {
+    private String compile(boolean debug) throws IOException {
         CompilerOptions options = new CompilerOptions();
-        compilationLevel.setOptionsForCompilationLevel(options);
-        compilationLevel.setTypeBasedOptimizationOptions(options);
+        options.setDefineToBooleanLiteral("DEBUG", debug);
+        if (debug) {
+            CompilationLevel.WHITESPACE_ONLY.setOptionsForCompilationLevel(options);
+        } else {
+            CompilationLevel.ADVANCED_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
+            CompilationLevel.ADVANCED_OPTIMIZATIONS.setTypeBasedOptimizationOptions(options);
+        }
         WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
         options.setOutputCharset("utf-8");
         options.setLanguageIn(CompilerOptions.LanguageMode.ECMASCRIPT5);

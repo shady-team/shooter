@@ -156,7 +156,7 @@ goog.require('game.logic');
         sendTo.call(this, id, new game.message.ObjectsCreationMessage(this._map.getObjectsSnapshot()));
     }
 
-    handlersHolder.registerHandler(game.message.ObjectsModificationsMessage.TYPE,
+    handlersHolder.registerHandler(game.message.ObjectsModificationsMessage.prototype.type,
         /**
          * @param {game.message.ObjectsModificationsMessage} message
          * @param {string} id
@@ -166,7 +166,7 @@ goog.require('game.logic');
         }
     );
 
-    handlersHolder.registerHandler(game.message.ObjectsCreationMessage.TYPE,
+    handlersHolder.registerHandler(game.message.ObjectsCreationMessage.prototype.type,
         /**
          * @param {game.message.ObjectsCreationMessage} message
          * @param {string} id

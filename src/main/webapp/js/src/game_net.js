@@ -100,7 +100,7 @@ goog.require('net');
 
     /**
      * @param {string} type
-     * @param {*} handler
+     * @param {Function} handler
      * @override
      */
     game.net.LocalServer.prototype.on = function (type, handler) {
@@ -137,7 +137,7 @@ goog.require('net');
      * @param {string} message
      */
     function fireAdapterEventParsing(type, id, message) {
-        this.fire(type, id, JSON.parse(message));
+        this.fire(type, id, rtt.global.deserialize(JSON.parse(message)));
     }
 
     /**
@@ -158,7 +158,7 @@ goog.require('net');
         if (id === ID_SELF) {
             this._localClient && this._localClient.fire(events.E_MESSAGE, message);
         } else {
-            this._rtc.send(id, JSON.stringify(message));
+            this._rtc.send(id, JSON.stringify(rtt.global.serialize(message)));
         }
     };
 

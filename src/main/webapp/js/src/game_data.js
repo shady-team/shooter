@@ -1,6 +1,7 @@
 goog.provide('game.data');
 
 goog.require('util');
+goog.require('rtt');
 goog.require('geom');
 goog.require('phys');
 goog.require('visual');
@@ -14,6 +15,7 @@ game.data.ModificationsBatch;
      * @param {phys.Body.<?>} body
      * @param {visual.TrianglesMesh} mesh
      * @constructor
+     * @implements {rtt.Typed}
      */
     game.data.GameObject = function (id, body, mesh) {
         this.id = id || util.genUUID();
@@ -21,19 +23,15 @@ game.data.ModificationsBatch;
         this.mesh = mesh;
     };
 
+    game.data.GameObject.prototype.type = rtt.global.registerType('game.data.GameObject', game.data.GameObject.prototype);
+
     /**
      * @param {game.data.GameObjectModification} modification
      */
     game.data.GameObject.prototype.applyModification = function (modification) {
-        modification.newPosition && (this.body.position = modification.newPosition);
-    };
-
-    /**
-     * @param {game.data.GameObject} obj
-     * @return {game.data.GameObject}
-     */
-    game.data.reviveGameObject = function (obj) {
-        return new game.data.GameObject(obj.id, phys.reviveBody(obj.body), visual.reviveMesh(obj.mesh));
+        if (modification.newPosition) {
+            this.body.position = modification.newPosition;
+        }
     };
 
     /**
@@ -81,15 +79,6 @@ game.data.ModificationsBatch;
     };
 
     /**
-     * @param {game.data.GameObjectModification} modification
-     * @return {game.data.GameObjectModification}
-     */
-    game.data.reviveModification = function (modification) {
-        modification.newPosition && (modification.newPosition = geom.Vector.revive(modification.newPosition));
-        return modification;
-    };
-
-    /**
      * @constructor
      */
     game.data.ModificationsBatchBuilder = function () {
@@ -121,16 +110,5 @@ game.data.ModificationsBatch;
      */
     game.data.buildModificationsBatch = function () {
         return new game.data.ModificationsBatchBuilder();
-    };
-
-    /**
-     * @param {game.data.ModificationsBatch} obj
-     * @return {game.data.ModificationsBatch}
-     */
-    game.data.reviveModificationsBatch = function (obj) {
-        for (var id in obj) {
-            obj[id] = game.data.reviveModification(obj[id]);
-        }
-        return obj;
     };
 })();

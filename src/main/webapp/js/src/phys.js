@@ -1,6 +1,7 @@
 goog.provide('phys');
 
 goog.require('util');
+goog.require('rtt');
 goog.require('geom');
 
 /** @typedef {{force:geom.Vector,impulse:geom.Vector}} */
@@ -11,22 +12,18 @@ var RIGIDNESS = 100;
 
 (function () {
     /**
-     * @constructor
+     * @interface
+     * @extends {rtt.Typed}
      */
     phys.Shape = function Shape() {
-        /**
-         * @const {string}
-         */
-        this.descriptor = this.constructor.DESCRIPTOR;
     };
 
     /**
      * @constructor
-     * @extends {phys.Shape}
+     * @implements {phys.Shape}
      * @param {number} radius
      */
     phys.Circle = function Circle(radius) {
-        phys.Shape.call(this);
         /**
          * @const
          * @type {number}
@@ -34,29 +31,19 @@ var RIGIDNESS = 100;
         this.radius = radius;
     };
 
+    var circleType = rtt.global.registerType('circle', phys.Circle.prototype);
     /**
-     * @static
      * @const {string}
      */
-    phys.Circle.DESCRIPTOR = "circle";
-
-    /**
-     * @static
-     * @param {phys.Circle} obj
-     * @return {phys.Circle}
-     */
-    phys.Circle.revive = function (obj) {
-        return new phys.Circle(obj.radius);
-    };
+    phys.Circle.prototype.type = circleType;
 
     /**
      * @constructor
-     * @extends {phys.Shape}
+     * @implements {phys.Shape}
      * @param {number} width
      * @param {number} height
      */
     phys.Rectangle = function Rectangle(width, height) {
-        phys.Shape.call(this);
         /**
          * @const
          * @type {number}
@@ -69,39 +56,18 @@ var RIGIDNESS = 100;
         this.height = height;
     };
 
+    var rectType = rtt.global.registerType('rect', phys.Rectangle.prototype);
     /**
-     * @static
      * @const {string}
      */
-    phys.Rectangle.DESCRIPTOR = "rect";
-
-    /**
-     * @static
-     * @param {phys.Rectangle} obj
-     * @return {phys.Rectangle}
-     */
-    phys.Rectangle.revive = function (obj) {
-        return new phys.Rectangle(obj.width, obj.height);
-    };
-
-    var reviversHolder = new util.ReviversHolder(
-        /**
-         * @param {phys.Shape} shape
-         * @return {string}
-         */
-        function (shape) {
-            return shape.descriptor;
-        }
-    );
-
-    reviversHolder.registerReviver(phys.Circle.DESCRIPTOR, phys.Circle.revive);
-    reviversHolder.registerReviver(phys.Rectangle.DESCRIPTOR, phys.Rectangle.revive);
+    phys.Rectangle.prototype.type = rectType;
 
     /**
      * @param {geom.Vector} position
      * @param {S} shape
      * @param {number} weight
      * @constructor
+     * @implements {rtt.Typed}
      * @template S
      */
     phys.Body = function Body(position, shape, weight) {
@@ -118,29 +84,14 @@ var RIGIDNESS = 100;
     };
 
     /**
-     * @return {*}
+     * @const {string}
      */
-    phys.Body.prototype.toJSON = function () {
-        return {
-            position: this.position,
-            speed: this.speed,
-            shape: this.shape,
-            weight: this.weight.toString() // because weight can be Infinite
-        };
-    };
-
-    /**
-     * @param {phys.Body} obj
-     * @return {phys.Body}
-     */
-    phys.reviveBody = function (obj) {
-        return new phys.Body(geom.Vector.revive(obj.position), reviversHolder.revive(obj.shape), +obj.weight);
-    };
+    phys.Body.prototype.type = rtt.global.registerType('body', phys.Body.prototype);
 
     /**
      * @type {Object.<string, function(phys.Body.<?>,phys.Body.<?>):phys.CollisionEffect>}
      */
-    var collisionHandlers = Object.create(null);
+    var collisionHandlers = util.emptyObject();
 
     /**
      * @param {string} a
@@ -165,14 +116,14 @@ var RIGIDNESS = 100;
     }
 
     /**
-     * @param {string} descriptorA
-     * @param {string} descriptorB
+     * @param {string} typeA
+     * @param {string} typeB
      * @param {function(phys.Body.<?>,phys.Body.<?>):phys.CollisionEffect} resolver
      */
-    function registerCollisionResolver(descriptorA, descriptorB, resolver) {
-        collisionHandlers[collisionKey(descriptorA, descriptorB)] = resolver;
-        if (descriptorA !== descriptorB) {
-            collisionHandlers[collisionKey(descriptorB, descriptorA)] = swappedCollisionResolver.bind(resolver);
+    function registerCollisionResolver(typeA, typeB, resolver) {
+        collisionHandlers[collisionKey(typeA, typeB)] = resolver;
+        if (typeA !== typeB) {
+            collisionHandlers[collisionKey(typeB, typeA)] = swappedCollisionResolver.bind(resolver);
         }
     }
 
@@ -190,7 +141,7 @@ var RIGIDNESS = 100;
      * @return {phys.CollisionEffect}
      */
     phys.collide = function collide(a, b) {
-        var handler = collisionHandlers[collisionKey(a.shape.descriptor, b.shape.descriptor)];
+        var handler = collisionHandlers[collisionKey(a.shape.type, b.shape.type)];
         return handler.call(null, a, b);
     };
 
@@ -213,7 +164,7 @@ var RIGIDNESS = 100;
         return impulse;
     }
 
-    registerCollisionResolver(phys.Circle.DESCRIPTOR, phys.Circle.DESCRIPTOR,
+    registerCollisionResolver(circleType, circleType,
         /**
          * @param {phys.Body.<phys.Circle>} a
          * @param {phys.Body.<phys.Circle>} b
@@ -235,7 +186,7 @@ var RIGIDNESS = 100;
         }
     );
 
-    registerCollisionResolver(phys.Circle.DESCRIPTOR, phys.Rectangle.DESCRIPTOR,
+    registerCollisionResolver(circleType, rectType,
         /**
          * @param {phys.Body.<phys.Circle>} circ
          * @param {phys.Body.<phys.Rectangle>} rect
@@ -281,7 +232,7 @@ var RIGIDNESS = 100;
         }
     );
 
-    registerCollisionResolver(phys.Rectangle.DESCRIPTOR, phys.Rectangle.DESCRIPTOR,
+    registerCollisionResolver(rectType, rectType,
         /**
          * @param {phys.Body.<phys.Rectangle>} a
          * @param {phys.Body.<phys.Rectangle>} b

@@ -35,9 +35,9 @@ goog.require('events');
      */
     input.KeyboardState = function () {
         /**
-         * @type {map}
+         * @type {Object.<number, boolean>}
          */
-        this.isKeyDown = {};
+        this.isKeyDown = util.emptyObject();
     };
 
     /**
@@ -113,7 +113,7 @@ goog.require('events');
          */
         this._keyboardState = new input.KeyboardState();
         /**
-         * @type {Object.<string,Array.<WhileKeyDownHandler>>}
+         * @type {Object.<number,Array.<input.WhileKeyDownHandler>>}
          * @private
          */
         this._whileKeyDownHandlers = util.emptyObject();
@@ -187,18 +187,21 @@ goog.require('events');
     }
 
     /**
-     * @param {string} handler
+     * @param {function(...[?]):?} handler
      * @param {number} timeout between handler calls in milliseconds
      * @constructor
      */
-    events.WhileKeyDownHandler = function WhileKeyDownHandler(handler, timeout) {
+    input.WhileKeyDownHandler = function WhileKeyDownHandler(handler, timeout) {
         this.handler = handler;
         this.timeout = timeout;
+        /**
+         * @type {?number}
+         */
         this.keyDownTime = null;
         this.lastNotificationTime = null;
     };
 
-    events.WhileKeyDownHandler.prototype.onKeyDown = function (eventTime) {
+    input.WhileKeyDownHandler.prototype.onKeyDown = function (eventTime) {
         if (this.keyDownTime != null) {
             return;
         }
@@ -206,7 +209,7 @@ goog.require('events');
         this.lastNotificationTime = eventTime;
     };
 
-    events.WhileKeyDownHandler.prototype.onKeyUp = function () {
+    input.WhileKeyDownHandler.prototype.onKeyUp = function () {
         this.keyDownTime = null;
         this.lastNotificationTime = null;
     };
@@ -214,7 +217,7 @@ goog.require('events');
     /**
      * @param {number} eventTime
      */
-    events.WhileKeyDownHandler.prototype.handle = function (eventTime) {
+    input.WhileKeyDownHandler.prototype.handle = function (eventTime) {
         if (this.keyDownTime == null) {
             return;
         }
@@ -242,13 +245,13 @@ goog.require('events');
     /**
      * @param {number} keyCode
      * @param {number} timeout between handler calls in milliseconds
-     * @param {*} handler
+     * @param {function(...[?]):?} handler
      */
     events.WithEvents.prototype.onWhileKeyDown = function (keyCode, timeout, handler) {
         if (!this._whileKeyDownHandlers[keyCode]) {
             this._whileKeyDownHandlers[keyCode] = [];
         }
-        this._whileKeyDownHandlers[keyCode].push(new events.WhileKeyDownHandler(handler, timeout));
+        this._whileKeyDownHandlers[keyCode].push(new input.WhileKeyDownHandler(handler, timeout));
     };
 
     /**
@@ -348,7 +351,7 @@ goog.require('events');
      * @param {number} keyCode
      */
     input.InputHandler.prototype.isKeyDown = function (keyCode) {
-        return (keyCode in this._keyboardState.isKeyDown) && (this._keyboardState.isKeyDown[keyCode]);
+        return this._keyboardState.isKeyDown[keyCode];
     };
 
     /**
@@ -390,5 +393,8 @@ goog.require('events');
     /** @const {string} */
     input.E_KEY_UP = 'keyUp';
 
+    /**
+     * @const {number}
+     */
     input.KEY_SPACE = 32;
 })();

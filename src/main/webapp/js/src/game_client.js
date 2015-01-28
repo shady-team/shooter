@@ -1,6 +1,7 @@
 goog.provide('game.client');
 
 goog.require('util');
+goog.require('rtt');
 goog.require('input');
 goog.require('game.data');
 goog.require('game.net');
@@ -18,8 +19,7 @@ goog.require('game.logic');
 
         this._server = server;
         this._canvas = canvas;
-        this._window = window;
-        this._scene = new visual.Scene(canvas.getContext("2d"));
+        this._scene = new visual.Scene();
         this._map = new game.logic.Map([]);
         this._mouseInputHandler = new input.InputHandler();
         this._keyboardInputHandler = new input.InputHandler();
@@ -45,7 +45,6 @@ goog.require('game.logic');
         var mouseHandler = this._mouseInputHandler,
             keyboardHandler = this._keyboardInputHandler,
             canvas = this._canvas,
-            window = this._window,
             server = this._server;
 
         var lastGameObject = null;
@@ -69,7 +68,7 @@ goog.require('game.logic');
         });
 
         mouseHandler.attachTo(canvas);
-        keyboardHandler.attachTo(window);
+        keyboardHandler.attachTo(document.body);
     }
 
     /**
@@ -97,6 +96,9 @@ goog.require('game.logic');
         return object.body.position;
     }
 
+    /**
+     * @this {game.client.GameClient}
+     */
     function redrawScene() {
         this._scene.drawScene(this._map.getObjectsSnapshot(), unwrapMesh, unwrapPosition);
     }
@@ -111,23 +113,21 @@ goog.require('game.logic');
         handlersHolder.handle(this, message);
     }
 
-    handlersHolder.registerHandler(game.message.ObjectsModificationsMessage.TYPE,
+    handlersHolder.registerHandler(game.message.ObjectsModificationsMessage.prototype.type,
         /**
          * @param {game.message.ObjectsModificationsMessage} message
-         * @param {string} id
          */
-        function (message, id) {
+        function (message) {
             this._map.applyModificationsBatch(message.batch);
             redrawScene.call(this);
         }
     );
 
-    handlersHolder.registerHandler(game.message.ObjectsCreationMessage.TYPE,
+    handlersHolder.registerHandler(game.message.ObjectsCreationMessage.prototype.type,
         /**
          * @param {game.message.ObjectsCreationMessage} message
-         * @param {string} id
          */
-        function (message, id) {
+        function (message) {
             this._map.addObjects(message.objects);
             redrawScene.call(this);
         }

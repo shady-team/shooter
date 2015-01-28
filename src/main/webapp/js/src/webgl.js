@@ -1,6 +1,7 @@
 goog.provide('webgl');
 
 goog.require('util');
+goog.require('rtt');
 
 /** @const {boolean} */
 var WEB_GL_DEBUG = false;
@@ -141,6 +142,7 @@ var WEB_GL_DEBUG = false;
     };
 
     /**
+     * @param {number=} target
      * @constructor
      */
     webgl.VertexBufferObject = function (target) {
@@ -209,6 +211,13 @@ var WEB_GL_DEBUG = false;
         }
     };
 
+    /**
+     * @param {number} r
+     * @param {number} g
+     * @param {number} b
+     * @param {number} a
+     * @constructor
+     */
     webgl.Color = function (r, g, b, a) {
         this.r = r;
         this.g = g;

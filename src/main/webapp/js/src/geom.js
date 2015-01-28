@@ -1,6 +1,7 @@
 goog.provide('geom');
 
 goog.require('util');
+goog.require('rtt');
 
 /** @const {number} */
 var EPS = 1e-4;
@@ -8,13 +9,9 @@ var EPS = 1e-4;
 (function () {
     /**
      * @interface
+     * @extends {rtt.Typed}
      */
     geom.Primitive = function Primitive() {};
-
-    /**
-     * @type {string}
-     */
-    geom.Primitive.descriptor;
 
     /**
      * 2D Vector
@@ -32,20 +29,15 @@ var EPS = 1e-4;
 
     /**
      * @static
-     * @const {string}
-     */
-    geom.Vector.DESCRIPTOR = 'vector';
-
-    /**
-     * @static
      * @const {geom.Vector}
      */
     geom.Vector.ZERO = new geom.Vector(0, 0);
 
+    var vectorType = rtt.global.registerType('vec', geom.Vector.prototype);
     /**
      * @const {string}
      */
-    geom.Vector.prototype.descriptor = geom.Vector.DESCRIPTOR;
+    geom.Vector.prototype.type = vectorType;
 
     /**
      * @return {number}
@@ -127,15 +119,6 @@ var EPS = 1e-4;
 
 
     /**
-     * @static
-     * @param {geom.Vector} obj
-     * @return {geom.Vector}
-     */
-    geom.Vector.revive = function (obj) {
-        return new geom.Vector(obj.x, obj.y);
-    };
-
-    /**
      * @param {geom.Vector} a
      * @param {geom.Vector} b
      * @constructor
@@ -148,15 +131,11 @@ var EPS = 1e-4;
         this.b = b;
     };
 
+    var segmentType = rtt.global.registerType('segment', geom.Segment.prototype);
     /**
      * @const {string}
      */
-    geom.Segment.DESCRIPTOR = 'segment';
-
-    /**
-     * @const {string}
-     */
-    geom.Segment.prototype.descriptor = geom.Segment.DESCRIPTOR;
+    geom.Segment.prototype.type = segmentType;
 
     /**
      * @return {number}
@@ -165,29 +144,17 @@ var EPS = 1e-4;
         return this.a.subtract(this.b).length();
     };
 
-    /**
-     * @type {Object.<string, function(geom.Primitive,geom.Primitive):number>}
-     */
-    var distanceCalculators = util.emptyObject();
+    var distance = new rtt.MutliMethod;
 
     /**
-     * @param {string} a
-     * @param {string} b
-     * @return {string}
-     */
-    function pairDescriptor(a, b) {
-        return a + "&" + b;
-    }
-
-    /**
-     * @param {string} descriptorA
-     * @param {string} descriptorB
+     * @param {string} typeA
+     * @param {string} typeB
      * @param {function(?,?):number} calculator
      */
-    function registerDistanceCalculator(descriptorA, descriptorB, calculator) {
-        distanceCalculators[pairDescriptor(descriptorA, descriptorB)] = calculator;
-        if (descriptorA !== descriptorB) {
-            distanceCalculators[pairDescriptor(descriptorB, descriptorA)] = util.swapBinary(calculator);
+    function registerDistanceCalculator(typeA, typeB, calculator) {
+        distance.overload(calculator, typeA, typeB);
+        if (typeA !== typeB) {
+            distance.overload(util.swapBinary(calculator), typeB, typeA);
         }
     }
 
@@ -195,13 +162,11 @@ var EPS = 1e-4;
      * @param {geom.Primitive} a
      * @param {geom.Primitive} b
      */
-    geom.distance = function distance(a, b) {
-        var calculator = distanceCalculators[pairDescriptor(a.descriptor, b.descriptor)];
-        util.assertDefined(calculator, "distance is not defined on pair of " + a.descriptor + " and " + b.descriptor);
-        return calculator.call(null, a, b);
+    geom.distance = function(a, b) {
+        return distance.call(null, a, b);
     };
 
-    registerDistanceCalculator(geom.Vector.DESCRIPTOR, geom.Vector.DESCRIPTOR,
+    registerDistanceCalculator(vectorType, vectorType,
         /**
          * @param {geom.Vector} a
          * @param {geom.Vector} b
@@ -212,7 +177,7 @@ var EPS = 1e-4;
         }
     );
 
-    registerDistanceCalculator(geom.Vector.DESCRIPTOR, geom.Segment.DESCRIPTOR,
+    registerDistanceCalculator(vectorType, segmentType,
         /**
          * @param {geom.Vector} vec
          * @param {geom.Segment} seg
@@ -227,7 +192,7 @@ var EPS = 1e-4;
         }
     );
 
-    registerDistanceCalculator(geom.Segment.DESCRIPTOR, geom.Segment.DESCRIPTOR,
+    registerDistanceCalculator(segmentType, segmentType,
         /**
          * @param {geom.Vector} a
          * @param {geom.Segment} b

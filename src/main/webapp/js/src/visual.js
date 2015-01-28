@@ -1,6 +1,7 @@
 goog.provide('visual');
 
 goog.require('util');
+goog.require('rtt');
 goog.require('geom');
 goog.require('webgl');
 
@@ -16,16 +17,16 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
 
     /**
      * @template T
-     * @param {T} wrappers
+     * @param {Array.<T>} wrappers
      * @param {function(T):visual.TrianglesMesh} unwrapper
      * @param {function(T):geom.Vector} positionExtractor
      */
     visual.Scene.prototype.drawScene = function (wrappers, unwrapper, positionExtractor) {
-        var positionsArrays = [];
-        var indicesArrays = [];
-        var colorsArrays = [];
-        var pointsCount = 0;
-        var indicesCount = 0;
+        var positionsArrays = [],
+            indicesArrays = [],
+            colorsArrays = [],
+            pointsCount = 0,
+            indicesCount = 0;
         wrappers.forEach(function (wrapper) {
             var unwrapped = unwrapper.call(null, wrapper),
                 position = positionExtractor.call(null, wrapper);
@@ -38,11 +39,11 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             pointsCount += positions.length / 2;
             indicesCount += indices.length;
         }, this);
-        var allPositions = new Float32Array(pointsCount * 2);
-        var allIndices = new Uint16Array(indicesCount);
-        var allColors = new Float32Array(pointsCount * 4);
-        var pointOffset = 0;
-        var indicesOffset = 0;
+        var allPositions = new Float32Array(pointsCount * 2),
+            allIndices = new Uint16Array(indicesCount),
+            allColors = new Float32Array(pointsCount * 4),
+            pointOffset = 0,
+            indicesOffset = 0;
         for (var i = 0; i < colorsArrays.length; i++) {
             var positions = positionsArrays[i];
             var indices = indicesArrays[i];
@@ -68,12 +69,9 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @param {Uint16Array} indices
      * @param {Float32Array} colors
      * @constructor
+     * @implements {rtt.Typed}
      */
     visual.TrianglesMesh = function (positions, indices, colors) {
-        /**
-         * @const {string}
-         */
-        this.type = this.type;
         util.assert(indices.length % 3 == 0);
         util.assert((indices.max() + 1) * 4 == colors.length);
         util.assert(indices.min() == 0);
@@ -82,6 +80,11 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
         this.indices = indices;
         this.colors = colors;
     };
+
+    /**
+     * @type {string}
+     */
+    visual.TrianglesMesh.prototype.type;
 
     /**
      * @param {geom.Vector} offset
@@ -153,20 +156,9 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
     visual.Circle.prototype = Object.create(visual.TrianglesMesh.prototype);
 
     /**
-     * @static
      * @const {string}
      */
-    visual.Circle.prototype.type = 'circle';
-
-    /**
-     * @static
-     * @param {visual.Circle} obj
-     * @return {visual.Circle}
-     */
-    visual.Circle.revive = function (obj) {
-        return new visual.Circle(obj.radius, obj.color);
-    };
-
+    visual.Circle.prototype.type = rtt.global.registerType('visual.Circle', visual.Circle.prototype);
 
     /**
      * @param {number} width
@@ -208,37 +200,5 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @static
      * @const {string}
      */
-    visual.Rectangle.prototype.type = 'rect';
-
-    /**
-     * @static
-     * @param {visual.Rectangle} obj
-     * @return {visual.Rectangle}
-     */
-    visual.Rectangle.revive = function (obj) {
-        return new visual.Rectangle(obj.width, obj.height, obj.color);
-    };
-
-
-    var reviversHolder = new util.ReviversHolder(
-        /**
-         * @param {visual.TrianglesMesh} mesh
-         * @return {string}
-         */
-        function (mesh) {
-            return mesh.type;
-        }
-    );
-
-    reviversHolder.registerReviver(visual.Circle.prototype.type, visual.Circle.revive);
-    reviversHolder.registerReviver(visual.Rectangle.prototype.type, visual.Rectangle.revive);
-
-    /**
-     * @template T
-     * @param {T} mesh
-     * @return {T}
-     */
-    visual.reviveMesh = function (mesh) {
-        return reviversHolder.revive(mesh);
-    }
+    visual.Rectangle.prototype.type = rtt.global.registerType('visual.Rectangle', visual.Rectangle.prototype);
 })();

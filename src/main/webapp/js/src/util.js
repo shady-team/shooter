@@ -15,7 +15,7 @@ var DEBUG = true;
         util.error = console.error.bind(console);
         /**
          * @param {boolean} test
-         * @param {string} message
+         * @param {string=} message
          */
         util.assert = function (test, message) {
             console.assert(test, message);
@@ -38,7 +38,7 @@ var DEBUG = true;
         };
         /**
          * @param {boolean} test
-         * @param {string} message
+         * @param {string=} message
          */
         util.assert = function (test, message) {
         };
@@ -46,7 +46,7 @@ var DEBUG = true;
 
     /**
      * @param {*} value
-     * @param {string} message
+     * @param {string=} message
      */
     util.assertDefined = function (value, message) {
         util.assert(util.isDefined(value), message);
@@ -54,7 +54,7 @@ var DEBUG = true;
 
     /**
      * @param {*} value
-     * @param {string} message
+     * @param {string=} message
      */
     util.assertUndefined = function (value, message) {
         util.assert(!util.isDefined(value), message);
@@ -177,40 +177,6 @@ var DEBUG = true;
             return false;
         }
         return true;
-    };
-
-    /**
-     * @param {function(?):string} typeExtractor
-     * @constructor
-     */
-    util.ReviversHolder = function (typeExtractor) {
-        /**
-         * @type {Object.<string, function(?):?>}
-         * @private
-         */
-        this._revivers = util.emptyObject();
-        this._typeExtractor = typeExtractor;
-    };
-
-    /**
-     * @param {string} type
-     * @param {function(?):?} reviver
-     */
-    util.ReviversHolder.prototype.registerReviver = function (type, reviver) {
-        this._revivers[type] = reviver;
-    };
-
-    /**
-     * @template T
-     * @param {T} object
-     * @return {T}
-     */
-    util.ReviversHolder.prototype.revive = function (object) {
-        var type = this._typeExtractor.call(null, object),
-            reviver = this._revivers[type];
-        util.assertDefined(type, "Bad object, type is not defined");
-        util.assertDefined(reviver, "Object has no registered reviver");
-        return reviver.call(null, object);
     };
 
     Uint16Array.prototype.max = function () {//TODO: function with arg
