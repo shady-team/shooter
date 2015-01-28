@@ -35,17 +35,9 @@ goog.require('events');
      */
     input.KeyboardState = function () {
         /**
-         * @type {boolean}
+         * @type {map}
          */
-        this.altKey = false;
-        /**
-         * @type {boolean}
-         */
-        this.ctrlKey = false;
-        /**
-         * @type {boolean}
-         */
-        this.shiftKey = false;
+        this.isKeyDown = {};
     };
 
     /**
@@ -92,16 +84,7 @@ goog.require('events');
         RIGHT: 2
     };
 
-    /**
-     * @param {input.KeyboardState} state
-     * @param {KeyboardEvent} evt
-     * @param {boolean} isKeyDown
-     */
-    function updateKeyboardState(state, evt, isKeyDown) {
-        state.altKey = evt.altKey;
-        state.shiftKey = evt.shiftKey;
-        state.ctrlKey = evt.ctrlKey;
-    }
+    var minTimeout = 15;
 
     /**
      * @constructor
@@ -129,9 +112,25 @@ goog.require('events');
          * @private
          */
         this._keyboardState = new input.KeyboardState();
+        /**
+         * @type {Object.<string,Array.<WhileKeyDownHandler>>}
+         * @private
+         */
+        this._whileKeyDownHandlers = util.emptyObject();
+
+        this.startNotifingWhileKeyIsDown();
     };
 
     input.InputHandler.prototype = Object.create(events.WithEvents.prototype);
+
+    input.InputHandler.prototype.startNotifingWhileKeyIsDown = function () {
+        this._intervalTimer = setInterval(repeatedCallback.bind(this), minTimeout);
+    };
+
+    input.InputHandler.prototype.stopNotifingWhileKeyIsDown = function () {
+        clearInterval(this._intervalTimer);
+        this._intervalTimer = null;
+    };
 
     /**
      * @type {Object.<string,function(?)>}
@@ -175,7 +174,7 @@ goog.require('events');
      */
     function mouseDownHandler(evt) {
         updateMouseState(this._mouseState, evt);
-        this.fire(events.E_MOUSE_DOWN, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
+        this.fire(input.E_MOUSE_DOWN, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
     }
 
     /**
@@ -184,16 +183,109 @@ goog.require('events');
      */
     function mouseUpHandler(evt) {
         updateMouseState(this._mouseState, evt);
-        this.fire(events.E_MOUSE_UP, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
+        this.fire(input.E_MOUSE_UP, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
     }
+
+    /**
+     * @param {string} handler
+     * @param {number} timeout between handler calls in milliseconds
+     * @constructor
+     */
+    events.WhileKeyDownHandler = function WhileKeyDownHandler(handler, timeout) {
+        this.handler = handler;
+        this.timeout = timeout;
+        this.keyDownTime = null;
+        this.lastNotificationTime = null;
+    };
+
+    events.WhileKeyDownHandler.prototype.onKeyDown = function (eventTime) {
+        if (this.keyDownTime != null) {
+            return;
+        }
+        this.keyDownTime = eventTime;
+        this.lastNotificationTime = eventTime;
+    };
+
+    events.WhileKeyDownHandler.prototype.onKeyUp = function () {
+        this.keyDownTime = null;
+        this.lastNotificationTime = null;
+    };
+
+    /**
+     * @param {number} eventTime
+     */
+    events.WhileKeyDownHandler.prototype.handle = function (eventTime) {
+        if (this.keyDownTime == null) {
+            return;
+        }
+        var passedTime = eventTime - this.lastNotificationTime;
+        if (passedTime < this.timeout) {
+            return;
+        }
+        var args = [];
+        args.unshift(eventTime - this.keyDownTime);
+        args.unshift(passedTime);
+        this.handler.apply(this, args);
+        this.lastNotificationTime = eventTime;
+    };
+
+    function repeatedCallback() {
+        var currentTime = new Date().getTime();
+        for (var type in this._whileKeyDownHandlers) {
+            var handlers = this._whileKeyDownHandlers[type];
+            handlers.forEach(function (handler) {
+                handler.handle(currentTime);
+            }, this);
+        }
+    }
+
+    /**
+     * @param {number} keyCode
+     * @param {number} timeout between handler calls in milliseconds
+     * @param {*} handler
+     */
+    events.WithEvents.prototype.onWhileKeyDown = function (keyCode, timeout, handler) {
+        if (!this._whileKeyDownHandlers[keyCode]) {
+            this._whileKeyDownHandlers[keyCode] = [];
+        }
+        this._whileKeyDownHandlers[keyCode].push(new events.WhileKeyDownHandler(handler, timeout));
+    };
+
+    /**
+     * @param {number} keyCode
+     * @param {*=} handler
+     */
+    events.WithEvents.prototype.offWhileKeyDown = function (keyCode, handler) {
+        if (!this._whileKeyDownHandlers[keyCode])
+            return;
+        if (handler === undefined) {
+            delete this._whileKeyDownHandlers[keyCode];
+        } else {
+            for (var i = 0; i < this._whileKeyDownHandlers[keyCode].length; i++) {
+                if (this._whileKeyDownHandlers[keyCode].handler == handler) {
+                    this._whileKeyDownHandlers[keyCode].splice(i, 1);
+                    i--;
+                }
+            }
+        }
+    };
 
     /**
      * @this {input.InputHandler}
      * @param {KeyboardEvent} evt
      */
     function keyDownHandler(evt) {
-        updateKeyboardState(this._keyboardState, evt, true);
-        this.fire(events.E_KEY_DOWN + evt.keyCode);
+        this._keyboardState.isKeyDown[evt.keyCode] = true;
+
+        var currentTime = new Date().getTime();
+        if (this._whileKeyDownHandlers[evt.keyCode]) {
+            var handlers = this._whileKeyDownHandlers[evt.keyCode].slice();
+            handlers.forEach(function (handler) {
+                handler.onKeyDown(currentTime);
+            }, this);
+        }
+
+        this.fire(input.E_KEY_DOWN, evt.keyCode);
     }
 
     /**
@@ -201,8 +293,17 @@ goog.require('events');
      * @param {KeyboardEvent} evt
      */
     function keyUpHandler(evt) {
-        updateKeyboardState(this._keyboardState, evt, false);
-        this.fire(events.E_KEY_UP + evt.keyCode);
+        this._keyboardState.isKeyDown[evt.keyCode] = false;
+
+        var currentTime = new Date().getTime();
+        if (this._whileKeyDownHandlers[evt.keyCode]) {
+            var handlers = this._whileKeyDownHandlers[evt.keyCode].slice();
+            handlers.forEach(function (handler) {
+                handler.onKeyUp();
+            }, this);
+        }
+
+        this.fire(input.E_KEY_UP, evt.keyCode);
     }
 
     /**
@@ -211,7 +312,7 @@ goog.require('events');
      */
     function mouseMoveHandler(evt) {
         updateMouseState(this._mouseState, evt);
-        this.fire(events.E_MOUSE_MOVE, this.getAbsoluteX(), this.getAbsoluteY(), this.getRelativeX(), this.getRelativeY());
+        this.fire(input.E_MOUSE_MOVE, this.getAbsoluteX(), this.getAbsoluteY(), this.getRelativeX(), this.getRelativeY());
     }
 
     /**
@@ -243,16 +344,11 @@ goog.require('events');
         return (this._mouseState.buttons & (1 << button)) !== 0;
     };
 
-    input.InputHandler.prototype.isAltDown = function () {
-        return this._keyboardState.altKey;
-    };
-
-    input.InputHandler.prototype.isCtrlDown = function () {
-        return this._keyboardState.ctrlKey;
-    };
-
-    input.InputHandler.prototype.isShiftDown = function () {
-        return this._keyboardState.shiftKey;
+    /**
+     * @param {number} keyCode
+     */
+    input.InputHandler.prototype.isKeyDown = function (keyCode) {
+        return (keyCode in this._keyboardState.isKeyDown) && (this._keyboardState.isKeyDown[keyCode]);
     };
 
     /**
@@ -282,6 +378,17 @@ goog.require('events');
     input.InputHandler.prototype.getRelativeY = function () {
         return this._mouseState.relY;
     };
+
+    /** @const {string} */
+    input.E_MOUSE_DOWN = 'mouseDown';
+    /** @const {string} */
+    input.E_MOUSE_MOVE = 'mouseMove';
+    /** @const {string} */
+    input.E_MOUSE_UP = 'mouseUp';
+    /** @const {string} */
+    input.E_KEY_DOWN = 'keyDown';
+    /** @const {string} */
+    input.E_KEY_UP = 'keyUp';
 
     input.KEY_SPACE = 32;
 })();

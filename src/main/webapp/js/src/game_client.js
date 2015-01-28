@@ -50,7 +50,7 @@ goog.require('game.logic');
 
         var lastGameObject = null;
 
-        mouseHandler.on(events.E_MOUSE_UP, function (x, y, button) {
+        mouseHandler.on(input.E_MOUSE_UP, function (x, y, button) {
             if (button !== input.Button.LEFT)
                 return;
             var position = new geom.Vector(x, y);
@@ -60,10 +60,12 @@ goog.require('game.logic');
             lastGameObject = newGameObject;
         });
 
-        keyboardHandler.registerWhileKeyDown(input.KEY_SPACE, 1000 / 60, function (deltaTime, timeFromKeyDown) {
+        keyboardHandler.onWhileKeyDown(input.KEY_SPACE, 1000 / 60, function (deltaTime, timeFromKeyDown) {
             var speed = new geom.Vector(0, 0.1);
-            lastGameObject.body.position = lastGameObject.body.position.add(speed.multiply(deltaTime));
-            server.send(new game.message.ObjectsModificationsMessage([lastGameObject]));
+            var newPosition = lastGameObject.body.position.add(speed.multiply(deltaTime));
+            var batchBuilder = game.data.buildModificationsBatch();
+            batchBuilder.add(lastGameObject.id, game.data.buildModification().setPosition(newPosition).build());
+            server.send(new game.message.ObjectsModificationsMessage(batchBuilder.build()));
         });
 
         mouseHandler.attachTo(canvas);
