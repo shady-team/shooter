@@ -31,7 +31,7 @@ var RIGIDNESS = 100;
         this.radius = radius;
     };
 
-    var circleType = rtt.global.registerType('circle', phys.Circle.prototype);
+    var circleType = rtt.registerType(phys.Circle.prototype, 'phys.Circle');
     /**
      * @const {string}
      */
@@ -56,7 +56,7 @@ var RIGIDNESS = 100;
         this.height = height;
     };
 
-    var rectType = rtt.global.registerType('rect', phys.Rectangle.prototype);
+    var rectType = rtt.registerType(phys.Rectangle.prototype, 'phys.Rectangle');
     /**
      * @const {string}
      */
@@ -86,7 +86,7 @@ var RIGIDNESS = 100;
     /**
      * @const {string}
      */
-    phys.Body.prototype.type = rtt.global.registerType('body', phys.Body.prototype);
+    phys.Body.prototype.type = rtt.registerType(phys.Body.prototype, 'phys.Body');
 
     /**
      * @type {Object.<string, function(phys.Body.<?>,phys.Body.<?>):phys.CollisionEffect>}

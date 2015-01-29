@@ -33,7 +33,7 @@ var EPS = 1e-4;
      */
     geom.Vector.ZERO = new geom.Vector(0, 0);
 
-    var vectorType = rtt.global.registerType('vec', geom.Vector.prototype);
+    var vectorType = rtt.registerType(geom.Vector.prototype, 'geom.Vector');
     /**
      * @const {string}
      */
@@ -131,7 +131,7 @@ var EPS = 1e-4;
         this.b = b;
     };
 
-    var segmentType = rtt.global.registerType('segment', geom.Segment.prototype);
+    var segmentType = rtt.registerType(geom.Segment.prototype, 'geom.Segment');
     /**
      * @const {string}
      */

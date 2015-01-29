@@ -79,44 +79,111 @@ goog.require('util');
     };
 
     /**
-     * @constructor
+     * @type {Object.<string,?Object>}
      */
-    rtt.TypedContext = function () {
-        /**
-         * @type {Object.<string,Object>}
-         * @private
-         */
-        this._prototypes = util.emptyObject();
-        /**
-         * @type {number}
-         * @private
-         */
-        this._nextAutoType = 0;
-    };
+    var types = util.emptyObject();
+    var nextAutoType = 0;
 
     /**
-     * @param {string} name
-     * @param {Object} prototype
+     * @param {?Object} prototype
+     * @param {string=} name
      * @return {string}
      */
-    rtt.TypedContext.prototype.registerType = function (name, prototype) {
+    rtt.registerType = function (prototype, name) {
+        /** @type {string} **/
         var type;
         if (DEBUG) {
-            if (name in this._prototypes)
+            if (!util.isDefined(name)) {
+                do {
+                    type = (nextAutoType++).toString(36);
+                } while (type in types);
+            } else {
+                type = /** @type {string} **/(name);
+            }
+            if (type in types)
                 throw new Error("type already registered");
-            type = name;
         } else {
-            type = "" + this._nextAutoType++;
+            type = (nextAutoType++).toString(36);
         }
-        this._prototypes[type] = prototype;
+        types[type] = prototype;
         return type;
     };
+
+    var numberType = rtt.registerType(null, 'number'),
+        /** @type {Array.<Object>} **/
+        primitiveTypePrototypes = [],
+        /** @type {Array.<{type: string, serializer: function(?):*}>} **/
+        primitiveTypeInfo = [],
+        /** @type {Object.<string, function(?):*>} **/
+        primitiveTypeDeserializers = util.emptyObject();
+
+    var nativeArrays = [
+        Int8Array,
+        Int16Array,
+        Int32Array,
+        Uint8Array,
+        Uint16Array,
+        Uint32Array,
+        Float32Array,
+        Float64Array
+    ];
+
+    /**
+     * @param {{length: number}} value
+     * @return {Array.<*>}
+     */
+    function nativeArraySerializer(value) {
+        return [].slice.call(value);
+    }
+
+    /**
+     * @template T, A
+     * @param {function(new:T, Array.<A>)} constructor
+     * @param {Array.<A>} value
+     * @return {T}
+     */
+    function nativeArrayDeserializer(constructor, value) {
+        return new constructor(value);
+    }
+
+    nativeArrays.forEach(function (na) {
+        var type = rtt.registerType(null);
+        primitiveTypePrototypes.push(na.prototype);
+        primitiveTypeInfo.push({
+            type: type,
+            serializer: nativeArraySerializer
+        });
+        primitiveTypeDeserializers[type] = nativeArrayDeserializer.bind(null, na);
+    });
+
+    /**
+     * @param {{type: string, serializer: function(*):*}} primitiveInfo
+     * @param {*} value
+     * @return {{type: string, value: *}}
+     */
+    function wrapPrimitive(primitiveInfo, value) {
+        return {
+            type: primitiveInfo.type,
+            value: primitiveInfo.serializer(value)
+        };
+    }
+
+    /**
+     * @param {number} number
+     * @return {{type: string, value: string}}
+     */
+    function wrapNumber(number) {
+        return {
+            type: numberType,
+            value: '' + number
+        };
+    }
 
     /**
      * @param {*} obj
      * @returns {*}
      */
-    rtt.TypedContext.prototype.serialize = function (obj) {
+    rtt.serialize = function (obj) {
         if (obj === null)
             return null;
         var result, field;
@@ -125,37 +192,42 @@ goog.require('util');
             case 'function':
                 return undefined;
             case 'object':
-                if (util.isArray(obj)) {
-                    return obj.map(this.serialize, this);
+                var idx = primitiveTypePrototypes.indexOf(Object.getPrototypeOf(/** @type {!Object} **/(obj)));
+                if (idx !== -1) {
+                    return wrapPrimitive(primitiveTypeInfo[idx], obj);
+                } else if (util.isArray(obj)) {
+                    return obj.map(rtt.serialize);
                 } else {
                     result = {};
                     for (field in obj)
                         if (obj.hasOwnProperty(field))
-                            result[field] = this.serialize(obj[field]);
+                            result[field] = rtt.serialize(obj[field]);
                     if (util.isDefined(obj.type))
                         result.type = obj.type;
                     return result;
                 }
+            case 'number':
+                if (!isFinite(obj))
+                    return wrapNumber(obj);
             default:
                 return obj;
         }
     };
 
     /**
-     * @this {rtt.TypedContext}
      * @param {*} value
      * @param {number} index
      * @param {Array.<*>} array
      */
     function deserializeEach(value, index, array) {
-        array[index] = this.deserialize(value);
+        array[index] = rtt.deserialize(value);
     }
 
     /**
      * @param {*} obj
      * @return {*}
      */
-    rtt.TypedContext.prototype.deserialize = function (obj) {
+    rtt.deserialize = function (obj) {
         if (obj === null)
             return null;
         if (typeof obj === 'object') {
@@ -165,23 +237,24 @@ goog.require('util');
             } else {
                 var result = obj;
                 if (util.isDefined(obj.type)) {
-                    var proto = this._prototypes[obj.type];
+                    if (obj.type === numberType) {
+                        return +obj.value;
+                    }
+                    if (obj.type in primitiveTypeDeserializers) {
+                        return primitiveTypeDeserializers[obj.type].call(null, obj.value);
+                    }
+                    var proto = types[obj.type];
                     util.assertDefined(proto, "Type not defined");
                     result = Object.create(proto);
                     delete obj.type;
                 }
                 for (var field in obj)
                     if (obj.hasOwnProperty(field))
-                        result[field] = this.deserialize(obj[field]);
+                        result[field] = rtt.deserialize(obj[field]);
                 return result;
             }
         } else {
             return obj;
         }
     };
-
-    /**
-     * @type {rtt.TypedContext}
-     */
-    rtt.global = new rtt.TypedContext;
 })();

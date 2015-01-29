@@ -23,7 +23,7 @@ game.data.ModificationsBatch;
         this.mesh = mesh;
     };
 
-    game.data.GameObject.prototype.type = rtt.global.registerType('game.data.GameObject', game.data.GameObject.prototype);
+    game.data.GameObject.prototype.type = rtt.registerType(game.data.GameObject.prototype, 'game.data.GameObject');
 
     /**
      * @param {game.data.GameObjectModification} modification

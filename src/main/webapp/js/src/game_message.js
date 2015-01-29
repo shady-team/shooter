@@ -24,7 +24,7 @@ goog.require('game.data');
     /**
      * @const {string}
      */
-    game.message.ConnectMessage.prototype.type = rtt.global.registerType('ConnectMessage', game.message.ConnectMessage.prototype);
+    game.message.ConnectMessage.prototype.type = rtt.registerType(game.message.ConnectMessage.prototype, 'game.message.ConnectMessage');
 
     /**
      * @param {string} id
@@ -38,7 +38,7 @@ goog.require('game.data');
     /**
      * @const {string}
      */
-    game.message.DisconnectMessage.prototype.type = rtt.global.registerType('DisconnectMessage', game.message.DisconnectMessage.prototype);
+    game.message.DisconnectMessage.prototype.type = rtt.registerType(game.message.DisconnectMessage.prototype, 'game.message.DisconnectMessage');
 
     /**
      * @param {Array.<string>} clients
@@ -52,7 +52,7 @@ goog.require('game.data');
     /**
      * @const {string}
      */
-    game.message.ClientListMessage.prototype.type = rtt.global.registerType('ClientListMessage', game.message.ClientListMessage.prototype);
+    game.message.ClientListMessage.prototype.type = rtt.registerType(game.message.ClientListMessage.prototype, 'game.message.ClientListMessage');
 
     /**
      * @param {game.data.ModificationsBatch} batch
@@ -67,7 +67,7 @@ goog.require('game.data');
      * @const {string}
      */
     game.message.ObjectsModificationsMessage.prototype.type
-        = rtt.global.registerType("ObjectsModificationsMessage", game.message.ObjectsModificationsMessage.prototype);
+        = rtt.registerType(game.message.ObjectsModificationsMessage.prototype, "game.message.ObjectsModificationsMessage");
 
     /**
      * @param {Array.<game.data.GameObject>} objects
@@ -82,7 +82,7 @@ goog.require('game.data');
      * @const {string}
      */
     game.message.ObjectsCreationMessage.prototype.type
-        = rtt.global.registerType("ObjectsCreationMessage", game.message.ObjectsCreationMessage.prototype);
+        = rtt.registerType(game.message.ObjectsCreationMessage.prototype, "game.message.ObjectsCreationMessage");
 
     /**
      * @constructor

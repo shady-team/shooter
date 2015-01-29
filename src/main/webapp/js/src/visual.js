@@ -158,7 +158,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
     /**
      * @const {string}
      */
-    visual.Circle.prototype.type = rtt.global.registerType('visual.Circle', visual.Circle.prototype);
+    visual.Circle.prototype.type = rtt.registerType(visual.Circle.prototype, 'visual.Circle');
 
     /**
      * @param {number} width
@@ -200,5 +200,5 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @static
      * @const {string}
      */
-    visual.Rectangle.prototype.type = rtt.global.registerType('visual.Rectangle', visual.Rectangle.prototype);
+    visual.Rectangle.prototype.type = rtt.registerType(visual.Rectangle.prototype, 'visual.Rectangle');
 })();
