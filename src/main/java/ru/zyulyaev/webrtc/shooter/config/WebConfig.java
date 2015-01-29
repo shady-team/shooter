@@ -11,7 +11,7 @@ import org.springframework.web.servlet.config.annotation.*;
 @Configuration
 @EnableWebMvc
 @Import(WebSocketConfig.class)
-@ComponentScan("ru.zyulyaev.webrtc.shooter.contollers")
+@ComponentScan("ru.zyulyaev.webrtc.shooter.js")
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
