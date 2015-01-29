@@ -163,6 +163,7 @@ goog.require('game.logic');
          */
         function (message, id) {
             this._map.applyModificationsBatch(message.batch);
+            sendAll.call(this, message);
         }
     );
 
