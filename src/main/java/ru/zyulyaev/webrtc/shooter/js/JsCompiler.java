@@ -34,7 +34,7 @@ public class JsCompiler {
 
     @PreDestroy
     public void stop() {
-        executor.shutdown();
+        executor.shutdownNow();
         try {
             if(!executor.awaitTermination(5, TimeUnit.SECONDS)) {
                 LOG.warn("Termination did not finish in 5 seconds");
