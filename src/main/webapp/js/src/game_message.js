@@ -107,7 +107,7 @@ goog.require('game.data');
      * @type {function(*,Object,...[*])}
      */
     game.message.MessageHandlersHolder.prototype.handle = function (thisArg, message) {
-        var args = [].splice.call(arguments, 1),
+        var args = [].slice.call(arguments, 1),
             handler = this._handlers[message.type];
         args[0] = message;
         if (util.isDefined(handler)) {
