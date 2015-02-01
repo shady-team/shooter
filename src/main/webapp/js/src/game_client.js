@@ -59,13 +59,15 @@ goog.require('game.logic');
             lastGameObject = newGameObject;
         });
 
-        keyboardHandler.onKeyDownRegular('moveLastObject', input.KEY_SPACE, 1000/60, function (deltaTime) {
+        keyboardHandler.on(input.E_KEY_IS_DOWN, util.throttle(1000 / 60, function (deltaTime) {
+            if (!keyboardHandler.isKeyDown(input.KEY_SPACE))
+                return;
             var speed = new geom.Vector(0, 0.1);
             var newPosition = lastGameObject.body.position.add(speed.multiply(deltaTime));
             var batchBuilder = game.data.buildModificationsBatch();
             batchBuilder.add(lastGameObject.id, game.data.buildModification().setPosition(newPosition).build());
             server.send(new game.message.ObjectsModificationsMessage(batchBuilder.build()));
-        });
+        }));
 
         mouseHandler.attachTo(canvas);
         keyboardHandler.attachTo(document.body);

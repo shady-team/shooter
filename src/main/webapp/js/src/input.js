@@ -76,6 +76,21 @@ goog.require('events');
     }
 
     /**
+     * @param {input.KeyboardState} state
+     * @param {KeyboardEvent} evt
+     */
+    function updateKeyboardState(state, evt) {
+        switch (evt.type) {
+            case 'keydown':
+                state.isKeyDown[evt.keyCode] = true;
+                break;
+            case 'keyup':
+                state.isKeyDown[evt.keyCode] = false;
+                break;
+        }
+    }
+
+    /**
      * @enum {number}
      */
     input.Button = {
@@ -169,42 +184,13 @@ goog.require('events');
     }
 
     /**
-     * @param {string} type
-     * @param {number} keyCode
-     * @param {number} timeout - delay in ms between events
-     *    (it is a recommendation, real delay is the smallest multiple of {@see input.InputHandler#_timeout} not less than handler)
-     * @param {function(...[?]):?} handler
-     */
-    input.InputHandler.prototype.onKeyDownRegular = function (type, keyCode, timeout, handler) {
-        var enableRegularEvent = function (keyDownCode) {
-            if (keyDownCode == keyCode) {
-                this.setRegularEvent(type, timeout);
-            }
-        };
-        var disableRegularEvent = function (keyUpCode) {
-            if (keyUpCode == keyCode) {
-                this.removeRegularEvent(type);
-            }
-        };
-        this.on(input.E_KEY_DOWN, enableRegularEvent.bind(this));
-        this.on(input.E_KEY_UP, disableRegularEvent.bind(this));
-        this.on(type, handler);
-    };
-
-    /**
-     * @param {string} type
-     * @param {Function=} handler
-     */
-    input.InputHandler.prototype.offKeyDownRegular = function (type, handler) {
-        this.off(type, handler);
-    };
-
-    /**
      * @this {input.InputHandler}
      * @param {KeyboardEvent} evt
      */
     function keyUpHandler(evt) {
+        updateKeyboardState(this._keyboardState, evt);
         this.fire(input.E_KEY_UP, evt.keyCode);
+        this._deactivate(input.E_KEY_IS_DOWN);
     }
 
     /**
@@ -212,7 +198,9 @@ goog.require('events');
      * @param {KeyboardEvent} evt
      */
     function keyDownHandler(evt) {
+        updateKeyboardState(this._keyboardState, evt);
         this.fire(input.E_KEY_DOWN, evt.keyCode);
+        this._activate(input.E_KEY_IS_DOWN);
     }
 
     /**
@@ -298,6 +286,8 @@ goog.require('events');
     input.E_KEY_DOWN = 'keyDown';
     /** @const {string} */
     input.E_KEY_UP = 'keyUp';
+    /** @const {string} */
+    input.E_KEY_IS_DOWN = "keyIsDown";
 
     /**
      * @const {number}

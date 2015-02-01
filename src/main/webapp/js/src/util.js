@@ -179,6 +179,27 @@ var DEBUG = true;
         return true;
     };
 
+    /**
+     * @param {number} delay
+     * @param {Function} func
+     * @return {Function}
+     */
+    util.throttle = function (delay, func) {
+        var lastExecution = 0;
+        return function () {
+            var now = Date.now();
+            if (now - lastExecution >= delay) {
+                if (now - lastExecution >= delay * 2) {
+                    [].unshift.call(arguments, 0);
+                } else {
+                    [].unshift.call(arguments, now - lastExecution);
+                }
+                lastExecution = now;
+                return func.apply(this, arguments);
+            }
+        };
+    };
+
     Uint16Array.prototype.max = function () {//TODO: function with arg
         var max = this[0];
         for (var i = 1; i < this.length; i++) {
