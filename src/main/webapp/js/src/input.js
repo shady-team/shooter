@@ -84,14 +84,12 @@ goog.require('events');
         RIGHT: 2
     };
 
-    var minTimeout = 15;
-
     /**
      * @constructor
-     * @extends {events.WithEvents}
+     * @extends {events.WithRegularEvents}
      */
     input.InputHandler = function () {
-        events.WithEvents.call(this);
+        events.WithRegularEvents.call(this);
         /**
          * @type {?HTMLElement}
          * @private
@@ -112,25 +110,9 @@ goog.require('events');
          * @private
          */
         this._keyboardState = new input.KeyboardState();
-        /**
-         * @type {Object.<number,Array.<input.WhileKeyDownHandler>>}
-         * @private
-         */
-        this._whileKeyDownHandlers = util.emptyObject();
-
-        this.startNotifingWhileKeyIsDown();
     };
 
-    input.InputHandler.prototype = Object.create(events.WithEvents.prototype);
-
-    input.InputHandler.prototype.startNotifingWhileKeyIsDown = function () {
-        this._intervalTimer = setInterval(repeatedCallback.bind(this), minTimeout);
-    };
-
-    input.InputHandler.prototype.stopNotifingWhileKeyIsDown = function () {
-        clearInterval(this._intervalTimer);
-        this._intervalTimer = null;
-    };
+    input.InputHandler.prototype = Object.create(events.WithRegularEvents.prototype);
 
     /**
      * @type {Object.<string,function(?)>}
@@ -187,126 +169,50 @@ goog.require('events');
     }
 
     /**
-     * @param {function(...[?]):?} handler
-     * @param {number} timeout between handler calls in milliseconds
-     * @constructor
-     */
-    input.WhileKeyDownHandler = function WhileKeyDownHandler(handler, timeout) {
-        this.handler = handler;
-        this.timeout = timeout;
-        /**
-         * @type {?number}
-         */
-        this.keyDownTime = null;
-        this.lastNotificationTime = null;
-    };
-
-    input.WhileKeyDownHandler.prototype.onKeyDown = function (eventTime) {
-        if (this.keyDownTime != null) {
-            return;
-        }
-        this.keyDownTime = eventTime;
-        this.lastNotificationTime = eventTime;
-    };
-
-    input.WhileKeyDownHandler.prototype.onKeyUp = function () {
-        this.keyDownTime = null;
-        this.lastNotificationTime = null;
-    };
-
-    /**
-     * @param {number} eventTime
-     */
-    input.WhileKeyDownHandler.prototype.handle = function (eventTime) {
-        if (this.keyDownTime == null) {
-            return;
-        }
-        var passedTime = eventTime - this.lastNotificationTime;
-        if (passedTime < this.timeout) {
-            return;
-        }
-        var args = [];
-        args.unshift(eventTime - this.keyDownTime);
-        args.unshift(passedTime);
-        this.handler.apply(this, args);
-        this.lastNotificationTime = eventTime;
-    };
-
-    function repeatedCallback() {
-        var currentTime = new Date().getTime();
-        for (var type in this._whileKeyDownHandlers) {
-            var handlers = this._whileKeyDownHandlers[type];
-            handlers.forEach(function (handler) {
-                handler.handle(currentTime);
-            }, this);
-        }
-    }
-
-    /**
+     * @param {string} type
      * @param {number} keyCode
-     * @param {number} timeout between handler calls in milliseconds
+     * @param {number} timeout - delay in ms between events
+     *    (it is a recommendation, real delay is the smallest multiple of {@see input.InputHandler#_timeout} not less than handler)
      * @param {function(...[?]):?} handler
      */
-    events.WithEvents.prototype.onWhileKeyDown = function (keyCode, timeout, handler) {
-        if (!this._whileKeyDownHandlers[keyCode]) {
-            this._whileKeyDownHandlers[keyCode] = [];
-        }
-        this._whileKeyDownHandlers[keyCode].push(new input.WhileKeyDownHandler(handler, timeout));
-    };
-
-    /**
-     * @param {number} keyCode
-     * @param {*=} handler
-     */
-    events.WithEvents.prototype.offWhileKeyDown = function (keyCode, handler) {
-        if (!this._whileKeyDownHandlers[keyCode])
-            return;
-        if (handler === undefined) {
-            delete this._whileKeyDownHandlers[keyCode];
-        } else {
-            for (var i = 0; i < this._whileKeyDownHandlers[keyCode].length; i++) {
-                if (this._whileKeyDownHandlers[keyCode].handler == handler) {
-                    this._whileKeyDownHandlers[keyCode].splice(i, 1);
-                    i--;
-                }
+    input.InputHandler.prototype.onKeyDownRegular = function (type, keyCode, timeout, handler) {
+        var enableRegularEvent = function (keyDownCode) {
+            if (keyDownCode == keyCode) {
+                this.setRegularEvent(type, timeout);
             }
-        }
+        };
+        var disableRegularEvent = function (keyUpCode) {
+            if (keyUpCode == keyCode) {
+                this.removeRegularEvent(type);
+            }
+        };
+        this.on(input.E_KEY_DOWN, enableRegularEvent.bind(this));
+        this.on(input.E_KEY_UP, disableRegularEvent.bind(this));
+        this.on(type, handler);
     };
 
     /**
-     * @this {input.InputHandler}
-     * @param {KeyboardEvent} evt
+     * @param {string} type
+     * @param {Function=} handler
      */
-    function keyDownHandler(evt) {
-        this._keyboardState.isKeyDown[evt.keyCode] = true;
-
-        var currentTime = new Date().getTime();
-        if (this._whileKeyDownHandlers[evt.keyCode]) {
-            var handlers = this._whileKeyDownHandlers[evt.keyCode].slice();
-            handlers.forEach(function (handler) {
-                handler.onKeyDown(currentTime);
-            }, this);
-        }
-
-        this.fire(input.E_KEY_DOWN, evt.keyCode);
-    }
+    input.InputHandler.prototype.offKeyDownRegular = function (type, handler) {
+        this.off(type, handler);
+    };
 
     /**
      * @this {input.InputHandler}
      * @param {KeyboardEvent} evt
      */
     function keyUpHandler(evt) {
-        this._keyboardState.isKeyDown[evt.keyCode] = false;
-
-        var currentTime = new Date().getTime();
-        if (this._whileKeyDownHandlers[evt.keyCode]) {
-            var handlers = this._whileKeyDownHandlers[evt.keyCode].slice();
-            handlers.forEach(function (handler) {
-                handler.onKeyUp();
-            }, this);
-        }
-
         this.fire(input.E_KEY_UP, evt.keyCode);
+    }
+
+    /**
+     * @this {input.InputHandler}
+     * @param {KeyboardEvent} evt
+     */
+    function keyDownHandler(evt) {
+        this.fire(input.E_KEY_DOWN, evt.keyCode);
     }
 
     /**

@@ -59,7 +59,7 @@ goog.require('game.logic');
             lastGameObject = newGameObject;
         });
 
-        keyboardHandler.onWhileKeyDown(input.KEY_SPACE, 1000 / 60, function (deltaTime, timeFromKeyDown) {
+        keyboardHandler.onKeyDownRegular('moveLastObject', input.KEY_SPACE, 1000/60, function (deltaTime) {
             var speed = new geom.Vector(0, 0.1);
             var newPosition = lastGameObject.body.position.add(speed.multiply(deltaTime));
             var batchBuilder = game.data.buildModificationsBatch();
