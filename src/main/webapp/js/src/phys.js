@@ -71,11 +71,17 @@ var RIGIDNESS = 100;
      * @template S
      */
     phys.Body = function Body(position, shape, weight) {
+        /**
+         * @type {geom.Vector}
+         */
         this.position = position;
         /**
          * @type {geom.Vector}
          */
         this.speed = geom.Vector.ZERO;
+        /**
+         * @type {S}
+         */
         this.shape = shape;
         /**
          * @type {number}
@@ -87,6 +93,49 @@ var RIGIDNESS = 100;
      * @const {string}
      */
     phys.Body.prototype.type = rtt.registerType(phys.Body.prototype, 'phys.Body');
+
+    /**
+     * @param {number} time
+     */
+    phys.Body.prototype.applyInternal = function (time) {
+    };
+
+    /**
+     * @param {geom.Vector} position
+     * @param {S} shape
+     * @param {number} weight
+     * @param {number} maxSpeed
+     * @constructor
+     * @extends {phys.Body}
+     * @template S
+     */
+    phys.MotionBody = function (position, shape, weight, maxSpeed) {
+        phys.Body.call(this, position, shape, weight);
+        /**
+         * @type {geom.Vector}
+         */
+        this.internalForce = geom.Vector.ZERO;
+        /**
+         * @type {number}
+         */
+        this.maxSpeed = maxSpeed;
+    };
+
+    rtt.extend(phys.MotionBody, phys.Body, 'phys.MotionBody');
+
+    /**
+     * @param {number} time
+     * @override
+     */
+    phys.MotionBody.prototype.applyInternal = function (time) {
+        if (this.internalForce.approximatelyEqual(geom.Vector.ZERO))
+            return;
+        var norm = this.internalForce.normalized(),
+            speed = this.speed.dot(norm),
+            left = Math.max(0, this.maxSpeed - speed),
+            addition = Math.min(left, this.internalForce.length() * time);
+        this.speed = this.speed.add(norm.multiply(addition));
+    };
 
     /**
      * @type {Object.<string, function(phys.Body.<?>,phys.Body.<?>):phys.CollisionEffect>}
@@ -318,8 +367,10 @@ var RIGIDNESS = 100;
             }
         }
         for (i = 0; i < n; ++i) {
+            /** @type {phys.Body.<?>} */
             var unwrapped = unwrapper.call(null, wrappers[i]);
             unwrapped.speed = unwrapped.speed.add(impulses[i].divide(unwrapped.weight));
+            unwrapped.applyInternal(time);
         }
         updatePositions.call(this, wrappers, unwrapper, time);
     };

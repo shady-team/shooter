@@ -29,8 +29,43 @@ game.data.ModificationsBatch;
      * @param {game.data.GameObjectModification} modification
      */
     game.data.GameObject.prototype.applyModification = function (modification) {
-        if (modification.newPosition) {
+        if (util.isDefined(modification.newPosition)) {
             this.body.position = modification.newPosition;
+        }
+        if (util.isDefined(modification.newSpeed)) {
+            this.body.speed = modification.newSpeed;
+        }
+    };
+
+    /**
+     * @param {?string} id
+     * @param {phys.MotionBody.<?>} body
+     * @param {visual.TrianglesMesh} mesh
+     * @constructor
+     * @extends {game.data.GameObject}
+     */
+    game.data.PlayerObject = function (id, body, mesh) {
+        game.data.GameObject.call(this, id, body, mesh);
+    };
+
+    rtt.extend(game.data.PlayerObject, game.data.GameObject, 'game.data.PlayerObject');
+
+    /**
+     * @type {phys.MotionBody.<?>}
+     */
+    game.data.PlayerObject.prototype.body;
+
+    /**
+     * @param {game.data.GameObjectModification} modification
+     * @override
+     */
+    game.data.PlayerObject.prototype.applyModification = function (modification) {
+        game.data.GameObject.prototype.applyModification.call(this, modification);
+        if (util.isDefined(modification.newMaxSpeed)) {
+            this.body.maxSpeed = /** @type {!number} */ (modification.newMaxSpeed);
+        }
+        if (util.isDefined(modification.newInternalForce)) {
+            this.body.internalForce = modification.newInternalForce;
         }
     };
 
@@ -46,6 +81,21 @@ game.data.ModificationsBatch;
     game.data.GameObjectModification.prototype.newPosition;
 
     /**
+     * @type {?geom.Vector}
+     */
+    game.data.GameObjectModification.prototype.newSpeed;
+
+    /**
+     * @type {?number}
+     */
+    game.data.GameObjectModification.prototype.newMaxSpeed;
+
+    /**
+     * @type {?geom.Vector}
+     */
+    game.data.GameObjectModification.prototype.newInternalForce;
+
+    /**
      * @constructor
      */
     game.data.ModificationBuilder = function () {
@@ -58,9 +108,37 @@ game.data.ModificationsBatch;
 
     /**
      * @param {geom.Vector} position
+     * @return {game.data.ModificationBuilder} this
      */
     game.data.ModificationBuilder.prototype.setPosition = function (position) {
         this._modification.newPosition = position;
+        return this;
+    };
+
+    /**
+     * @param {geom.Vector} speed
+     * @return {game.data.ModificationBuilder} this
+     */
+    game.data.ModificationBuilder.prototype.setSpeed = function (speed) {
+        this._modification.newSpeed = speed;
+        return this;
+    };
+
+    /**
+     * @param {number} maxSpeed
+     * @return {game.data.ModificationBuilder} this
+     */
+    game.data.ModificationBuilder.prototype.setMaxSpeed = function (maxSpeed) {
+        this._modification.newMaxSpeed = maxSpeed;
+        return this;
+    };
+
+    /**
+     * @param {geom.Vector} internalForce
+     * @return {game.data.ModificationBuilder} this
+     */
+    game.data.ModificationBuilder.prototype.setInternalForce = function (internalForce) {
+        this._modification.newInternalForce = internalForce;
         return this;
     };
 
@@ -92,6 +170,7 @@ game.data.ModificationsBatch;
     /**
      * @param {string} id
      * @param {game.data.GameObjectModification} modification
+     * @return {game.data.ModificationsBatchBuilder} this
      */
     game.data.ModificationsBatchBuilder.prototype.add = function (id, modification) {
         this._batch[id] = modification;

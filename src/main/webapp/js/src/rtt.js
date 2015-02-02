@@ -109,6 +109,17 @@ goog.require('util');
         return type;
     };
 
+    /**
+     * @param {function(new:?,...[?])} child
+     * @param {function(new:?,...[?])} parent
+     * @param {string=} typename
+     */
+    rtt.extend = function (child, parent, typename) {
+        child.prototype = Object.create(parent.prototype);
+        child.prototype.constructor = child;
+        child.prototype.type = rtt.registerType(child.prototype, typename);
+    };
+
     var numberType = rtt.registerType(null, 'number'),
         /** @type {Array.<Object>} **/
         primitiveTypePrototypes = [],

@@ -47,27 +47,57 @@ goog.require('game.logic');
             canvas = this._canvas,
             server = this._server;
 
-        var lastGameObject = null;
+        var playerObject = null;
 
         mouseHandler.on(input.E_MOUSE_UP, function (x, y, button) {
-            if (button !== input.Button.LEFT)
+            if (button !== input.Button.LEFT && button !== input.Button.RIGHT)
                 return;
-            var position = new geom.Vector(x, y);
-            var newGameObject = new game.data.GameObject(null, new phys.Body(position,
-                new phys.Circle(30), 1), new visual.Circle(30, webgl.BLUE_COLOR));
+            var position = new geom.Vector(x, y),
+                newGameObject;
+            if (button === input.Button.LEFT) {
+                newGameObject = new game.data.GameObject(
+                    null,
+                    new phys.Body(position, new phys.Circle(30), 1),
+                    new visual.Circle(30, webgl.BLUE_COLOR)
+                );
+            } else {
+                newGameObject = new game.data.PlayerObject(
+                    null,
+                    new phys.MotionBody(position, new phys.Circle(20), 0.6, 100),
+                    new visual.Circle(20, webgl.RED_COLOR)
+                );
+                playerObject = newGameObject;
+            }
             server.send(new game.message.ObjectsCreationMessage([newGameObject]));
-            lastGameObject = newGameObject;
         });
 
-        keyboardHandler.on(input.E_KEY_IS_DOWN, util.throttle(1000 / 60, function (deltaTime) {
-            if (!keyboardHandler.isKeyDown(input.KEY_SPACE))
+        function moveHandler() {
+            if (playerObject === null)
                 return;
-            var speed = new geom.Vector(0, 0.1);
-            var newPosition = lastGameObject.body.position.add(speed.multiply(deltaTime));
-            var batchBuilder = game.data.buildModificationsBatch();
-            batchBuilder.add(lastGameObject.id, game.data.buildModification().setPosition(newPosition).build());
-            server.send(new game.message.ObjectsModificationsMessage(batchBuilder.build()));
-        }));
+
+            var force = geom.Vector.ZERO,
+                right = new geom.Vector(1000, 0),
+                down = new geom.Vector(0, 1000);
+
+            if (keyboardHandler.isKeyDown(input.Key.W))
+                force = force.subtract(down);
+            if (keyboardHandler.isKeyDown(input.Key.S))
+                force = force.add(down);
+
+            if (keyboardHandler.isKeyDown(input.Key.A))
+                force = force.subtract(right);
+            if (keyboardHandler.isKeyDown(input.Key.D))
+                force = force.add(right);
+
+            server.send(new game.message.ObjectsModificationsMessage(
+                game.data.buildModificationsBatch()
+                    .add(playerObject.id, game.data.buildModification().setInternalForce(force).build())
+                    .build()
+            ));
+        }
+
+        keyboardHandler.on(input.E_KEY_DOWN, moveHandler);
+        keyboardHandler.on(input.E_KEY_UP, moveHandler);
 
         mouseHandler.attachTo(canvas);
         keyboardHandler.attachTo(document.body);

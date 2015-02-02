@@ -289,8 +289,18 @@ goog.require('events');
     /** @const {string} */
     input.E_KEY_IS_DOWN = "keyIsDown";
 
+    function charCode(char) {
+        return char.toUpperCase().charCodeAt(0);
+    }
+
     /**
-     * @const {number}
+     * @enum {number}
      */
-    input.KEY_SPACE = 32;
+    input.Key = {
+        SPACE: 32,
+        W: charCode('w'),
+        A: charCode('a'),
+        S: charCode('s'),
+        D: charCode('d')
+    };
 })();

@@ -153,12 +153,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
         visual.TrianglesMesh.call(this, positions, indices, colors);
     };
 
-    visual.Circle.prototype = Object.create(visual.TrianglesMesh.prototype);
-
-    /**
-     * @const {string}
-     */
-    visual.Circle.prototype.type = rtt.registerType(visual.Circle.prototype, 'visual.Circle');
+    rtt.extend(visual.Circle, visual.TrianglesMesh, 'visual.Circle');
 
     /**
      * @param {number} width
@@ -194,11 +189,5 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
         visual.TrianglesMesh.call(this, positions, indices, colors);
     };
 
-    visual.Rectangle.prototype = Object.create(visual.TrianglesMesh.prototype);
-
-    /**
-     * @static
-     * @const {string}
-     */
-    visual.Rectangle.prototype.type = rtt.registerType(visual.Rectangle.prototype, 'visual.Rectangle');
+    rtt.extend(visual.Rectangle, visual.TrianglesMesh, 'visual.Rectangle');
 })();
