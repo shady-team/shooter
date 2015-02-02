@@ -72,12 +72,14 @@ class CompilingWatcher implements Runnable {
         compiler.compile(externs, sources, options);
 
         if (compiler.hasErrors())
-            throw new RuntimeException("Js compilation failed");
+            return null;
 
         return compiler.toSource();
     }
 
     private void writeJs(String filename, String code) throws IOException {
+        if (code == null)
+            return;
         Files.write(
                 outputDir.resolve(filename),
                 code.getBytes(),
