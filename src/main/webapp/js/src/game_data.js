@@ -5,6 +5,7 @@ goog.require('rtt');
 goog.require('geom');
 goog.require('phys');
 goog.require('visual');
+goog.require('game.const');
 
 /** @typedef {Object.<string,game.data.GameObjectModification>} */
 game.data.ModificationsBatch;
@@ -14,13 +15,21 @@ game.data.ModificationsBatch;
      * @param {?string} id
      * @param {phys.Body.<?>} body
      * @param {visual.TrianglesMesh} mesh
+     * @param {number=} course - in degrees (counterclockwise)
      * @constructor
      * @implements {rtt.Typed}
      */
-    game.data.GameObject = function (id, body, mesh) {
+    game.data.GameObject = function (id, body, mesh, course) {
         this.id = id || util.genUUID();
         this.body = body;
         this.mesh = mesh;
+        if (!course) {
+            course = 0;
+        }
+        /**
+         * @type {number}
+         */
+        this.course = course;//TODO: migrate to phys.Body. But for now it is only needed for PlayerObject rendering (circle)
     };
 
     game.data.GameObject.prototype.type = rtt.registerType(game.data.GameObject.prototype, 'game.data.GameObject');
@@ -36,6 +45,19 @@ game.data.ModificationsBatch;
             this.body.speed = modification.newSpeed;
         }
     };
+
+    /**
+     * @param {?string} id
+     * @param {phys.MotionBody.<?>} body
+     * @param {visual.TrianglesMesh} mesh
+     * @constructor
+     * @extends {game.data.GameObject}
+     */
+    game.data.Bullet = function (id, body, mesh) {
+        game.data.GameObject.call(this, id, body, mesh);
+    };
+
+    rtt.extend(game.data.Bullet, game.data.GameObject, 'game.data.Bullet');
 
     /**
      * @param {?string} id
@@ -67,6 +89,28 @@ game.data.ModificationsBatch;
         if (util.isDefined(modification.newInternalForce)) {
             this.body.internalForce = modification.newInternalForce;
         }
+        if (util.isDefined(modification.newCourse)) {
+            this.course = modification.newCourse;
+        }
+    };
+
+    /**
+     * @return {geom.Vector} normalized vector of player orientation
+     */
+    game.data.PlayerObject.prototype.getCourseVector = function () {
+        return new geom.Vector(-Math.sin(this.course), Math.cos(this.course));
+    };
+
+    /**
+     * @return {game.data.Bullet}
+     */
+    game.data.PlayerObject.prototype.createBullet = function () {
+        return new game.data.Bullet(
+            null,
+            new phys.MotionBody(this.body.position.add(this.getCourseVector().multiply(game.const.player.radius)),
+                new phys.Circle(game.const.bullet.radius), game.const.bullet.weight, game.const.bullet.speed),
+            new visual.Circle(game.const.bullet.radius, game.const.bullet.color)
+        );
     };
 
     /**
@@ -94,6 +138,11 @@ game.data.ModificationsBatch;
      * @type {?geom.Vector}
      */
     game.data.GameObjectModification.prototype.newInternalForce;
+
+    /**
+     * @type {?number}
+     */
+    game.data.GameObjectModification.prototype.newCourse;
 
     /**
      * @constructor
@@ -130,6 +179,15 @@ game.data.ModificationsBatch;
      */
     game.data.ModificationBuilder.prototype.setMaxSpeed = function (maxSpeed) {
         this._modification.newMaxSpeed = maxSpeed;
+        return this;
+    };
+
+    /**
+     * @param {number} course
+     * @return {game.data.ModificationBuilder} this
+     */
+    game.data.ModificationBuilder.prototype.setCourse = function (course) {
+        this._modification.newCourse = course;
         return this;
     };
 

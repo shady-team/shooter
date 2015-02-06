@@ -4,6 +4,7 @@ goog.require('util');
 goog.require('rtt');
 goog.require('geom');
 goog.require('webgl');
+goog.require('matrix');
 
 /** @const {number} */
 var CIRCLE_EDGE_PIXEL_LENGTH = 5;
@@ -20,8 +21,9 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @param {Array.<T>} wrappers
      * @param {function(T):visual.TrianglesMesh} unwrapper
      * @param {function(T):geom.Vector} positionExtractor
+     * @param {function(T):number} angleExtractor
      */
-    visual.Scene.prototype.drawScene = function (wrappers, unwrapper, positionExtractor) {
+    visual.Scene.prototype.drawScene = function (wrappers, unwrapper, positionExtractor, angleExtractor) {
         var positionsArrays = [],
             indicesArrays = [],
             colorsArrays = [],
@@ -29,8 +31,9 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             indicesCount = 0;
         wrappers.forEach(function (wrapper) {
             var unwrapped = unwrapper.call(null, wrapper),
-                position = positionExtractor.call(null, wrapper);
-            var positions = unwrapped.getPositionsWithOffset(position);
+                position = positionExtractor.call(null, wrapper),
+                angle = angleExtractor.call(null, wrapper);
+            var positions = unwrapped.getPositions(position, angle);
             var indices = unwrapped.indices;
             var colors = unwrapped.colors;
             positionsArrays.push(positions);
@@ -88,15 +91,23 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
 
     /**
      * @param {geom.Vector} offset
+     * @param {number} angle - degree of mesh rotation (counterclockwise)
+     *      So if angle = 0: mesh will be returned as is
      * @return {Float32Array}
      */
-    visual.TrianglesMesh.prototype.getPositionsWithOffset = function (offset) {
+    visual.TrianglesMesh.prototype.getPositions = function (offset, angle) {
         var positions = new Float32Array(this.positions);
+        //TODO: implement world coords to camera coords via one matrix
+        var rotation = matrix.Matrix3.rotation(angle);
         for (var i = 0; i < positions.length; i++) {
-            //TODO: implement world coords to camera coords via matrix
-            positions[i * 2 + 0] = (positions[i * 2 + 0] + offset.x) * 2 / webgl.width - 1;
-            positions[i * 2 + 1] = (positions[i * 2 + 1] + offset.y) * 2 / webgl.height - 1;
-            positions[i * 2 + 1] *= -1;
+            var xy = rotation.translate(new geom.Vector(positions[i * 2 + 0], positions[i * 2 + 1]));
+            positions[i * 2 + 0] = xy.x;
+            positions[i * 2 + 1] = xy.y;
+        }
+        for (var j = 0; j < positions.length; j++) {
+            positions[j * 2 + 0] = (positions[j * 2 + 0] + offset.x) * 2 / webgl.width - 1;
+            positions[j * 2 + 1] = (positions[j * 2 + 1] + offset.y) * 2 / webgl.height - 1;
+            positions[j * 2 + 1] *= -1;
         }
         return positions;
     };
@@ -154,6 +165,52 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
     };
 
     rtt.extend(visual.Circle, visual.TrianglesMesh, 'visual.Circle');
+
+
+    /**
+     * @param {number} radius
+     * @param {webgl.Color} color
+     * @param {number} removedAngle - in degrees (segment of circle, that will be empty)
+     * @constructor
+     * @extends {visual.TrianglesMesh}
+     */
+    visual.OrientedCircle = function (radius, color, removedAngle) {
+        /**
+         * @const {number}
+         */
+        this.radius = radius;
+        /**
+         * @const {webgl.Color}
+         */
+        this.color = color;
+
+        removedAngle *= Math.PI / 180;
+        var pixels_perimeter = (2 * Math.PI - removedAngle) * radius;
+        var segments_count = Math.max(6, Math.round(pixels_perimeter / CIRCLE_EDGE_PIXEL_LENGTH));
+        if (segments_count % 2 == 1) {
+            segments_count += 1;
+        }
+        var vertices_count = segments_count + 2;
+
+        var positions = new Float32Array(vertices_count * 2);
+        var indices = new Uint16Array(segments_count * 3);
+        positions[0] = 0;
+        positions[1] = 0;
+        positions[2] = this.radius * Math.cos(removedAngle / 2.0);
+        positions[3] = this.radius * Math.sin(removedAngle / 2.0);
+        for (var i = 0; i < segments_count; i++) {
+            var angle = removedAngle / 2.0 + (2 * Math.PI - removedAngle) * (i + 1) / segments_count;
+            positions[(i + 2) * 2 + 0] = this.radius * Math.cos(angle);
+            positions[(i + 2) * 2 + 1] = this.radius * Math.sin(angle);
+            indices[i * 3 + 0] = 0;
+            indices[i * 3 + 1] = i + 1;
+            indices[i * 3 + 2] = i + 2;
+        }
+        var colors = _generateColors(vertices_count, color);
+        visual.TrianglesMesh.call(this, positions, indices, colors);
+    };
+
+    rtt.extend(visual.OrientedCircle, visual.TrianglesMesh, 'visual.OrientedCircle');
 
     /**
      * @param {number} width

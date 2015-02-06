@@ -7,6 +7,7 @@ goog.require('game.data');
 goog.require('game.net');
 goog.require('game.message');
 goog.require('game.logic');
+goog.require('game.const');
 
 (function () {
     /**
@@ -63,8 +64,9 @@ goog.require('game.logic');
             } else {
                 newGameObject = new game.data.PlayerObject(
                     null,
-                    new phys.MotionBody(position, new phys.Circle(20), 0.6, 100),
-                    new visual.Circle(20, webgl.RED_COLOR)
+                    new phys.MotionBody(position, new phys.Circle(game.const.player.radius),
+                        game.const.player.weight, game.const.player.maxSpeed),
+                    new visual.OrientedCircle(game.const.player.radius, webgl.RED_COLOR, game.const.player.removedAngle)
                 );
                 playerObject = newGameObject;
             }
@@ -78,6 +80,8 @@ goog.require('game.logic');
             var force = geom.Vector.ZERO,
                 right = new geom.Vector(1000, 0),
                 down = new geom.Vector(0, 1000);
+            var course = playerObject.course,
+                rotatingAngle = 10;
 
             if (keyboardHandler.isKeyDown(input.Key.W))
                 force = force.subtract(down);
@@ -89,9 +93,14 @@ goog.require('game.logic');
             if (keyboardHandler.isKeyDown(input.Key.D))
                 force = force.add(right);
 
+            if (keyboardHandler.isKeyDown(input.Key.J))
+                course += rotatingAngle;
+            if (keyboardHandler.isKeyDown(input.Key.K))
+                course -= rotatingAngle;
+
             server.send(new game.message.ObjectsModificationsMessage(
                 game.data.buildModificationsBatch()
-                    .add(playerObject.id, game.data.buildModification().setInternalForce(force).build())
+                    .add(playerObject.id, game.data.buildModification().setInternalForce(force).setCourse(course).build())
                     .build()
             ));
         }
@@ -129,10 +138,18 @@ goog.require('game.logic');
     }
 
     /**
+     * @param {game.data.GameObject} object
+     * @return {number}
+     */
+    function unwrapCourse(object) {
+        return object.course;
+    }
+
+    /**
      * @this {game.client.GameClient}
      */
     function redrawScene() {
-        this._scene.drawScene(this._map.getObjectsSnapshot(), unwrapMesh, unwrapPosition);
+        this._scene.drawScene(this._map.getObjectsSnapshot(), unwrapMesh, unwrapPosition, unwrapCourse);
     }
 
     var handlersHolder = new game.message.MessageHandlersHolder();

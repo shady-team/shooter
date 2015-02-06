@@ -301,6 +301,8 @@ goog.require('events');
         W: charCode('w'),
         A: charCode('a'),
         S: charCode('s'),
-        D: charCode('d')
+        D: charCode('d'),
+        J: charCode('j'),
+        K: charCode('k')
     };
 })();
