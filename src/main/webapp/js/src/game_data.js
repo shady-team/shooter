@@ -44,6 +44,9 @@ game.data.ModificationsBatch;
         if (util.isDefined(modification.newSpeed)) {
             this.body.speed = modification.newSpeed;
         }
+        if (util.isDefined(modification.addToCourse)) {
+            this.course += modification.addToCourse;
+        }
     };
 
     /**
@@ -89,12 +92,6 @@ game.data.ModificationsBatch;
         if (util.isDefined(modification.newInternalForce)) {
             this.body.internalForce = modification.newInternalForce;
         }
-        if (util.isDefined(modification.newCourse)) {
-            this.course = modification.newCourse;
-            //TODO: fix WARNING - assignment to property course of game.data.PlayerObject
-            //found   : (null|number)
-            //required: number
-        }
     };
 
     /**
@@ -110,7 +107,7 @@ game.data.ModificationsBatch;
     game.data.PlayerObject.prototype.createBullet = function () {
         var bullet = new game.data.Bullet(
             null,
-            new phys.MotionBody(this.body.position.add(this.getCourseVector().multiply(game.const.player.radius)),
+            new phys.MotionBody(this.body.position.add(this.getCourseVector().multiply(game.const.player.radius + game.const.bullet.radius)),
                 new phys.Circle(game.const.bullet.radius), game.const.bullet.weight, game.const.bullet.speed),
             new visual.Circle(game.const.bullet.radius, game.const.bullet.color)
         );
@@ -147,7 +144,7 @@ game.data.ModificationsBatch;
     /**
      * @type {?number}
      */
-    game.data.GameObjectModification.prototype.newCourse;
+    game.data.GameObjectModification.prototype.addToCourse;
 
     /**
      * @constructor
@@ -188,11 +185,11 @@ game.data.ModificationsBatch;
     };
 
     /**
-     * @param {number} course
+     * @param {number} delta
      * @return {game.data.ModificationBuilder} this
      */
-    game.data.ModificationBuilder.prototype.setCourse = function (course) {
-        this._modification.newCourse = course;
+    game.data.ModificationBuilder.prototype.setAddToCourse = function (delta) {
+        this._modification.addToCourse = delta;
         return this;
     };
 

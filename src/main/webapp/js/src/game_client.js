@@ -39,6 +39,9 @@ goog.require('game.const');
         canvas.height = 480;
     }
 
+    var playerObject = null;
+    var playerObjectId = null;
+
     /**
      * @this {game.client.GameClient}
      */
@@ -47,8 +50,6 @@ goog.require('game.const');
             keyboardHandler = this._keyboardInputHandler,
             canvas = this._canvas,
             server = this._server;
-
-        var playerObject = null;
 
         mouseHandler.on(input.E_MOUSE_UP, function (x, y, button) {
             if (button !== input.Button.LEFT && button !== input.Button.RIGHT)
@@ -68,7 +69,7 @@ goog.require('game.const');
                         game.const.player.weight, game.const.player.maxSpeed),
                     new visual.OrientedCircle(game.const.player.radius, webgl.RED_COLOR, game.const.player.removedAngle)
                 );
-                playerObject = newGameObject;
+                playerObjectId = newGameObject.id;
             }
             server.send(new game.message.ObjectsCreationMessage([newGameObject]));
         });
@@ -81,7 +82,7 @@ goog.require('game.const');
             var force = geom.Vector.ZERO,
                 right = matrix.Matrix3.rotation(90).translate(playerObject.getCourseVector().multiply(forcePower)),
                 down = playerObject.getCourseVector().multiply(-forcePower);
-            var course = playerObject.course,
+            var addToCourse = 0,
                 rotatingAngle = 10;
 
             if (keyboardHandler.isKeyDown(input.Key.W))
@@ -95,14 +96,14 @@ goog.require('game.const');
                 force = force.add(right);
 
             if (keyboardHandler.isKeyDown(input.Key.J))
-                course -= rotatingAngle;
+                addToCourse -= rotatingAngle;
             if (keyboardHandler.isKeyDown(input.Key.L))
-                course += rotatingAngle;
+                addToCourse += rotatingAngle;
+
+            var modification = game.data.buildModification().setInternalForce(force).setAddToCourse(addToCourse);
 
             server.send(new game.message.ObjectsModificationsMessage(
-                game.data.buildModificationsBatch()
-                    .add(playerObject.id, game.data.buildModification().setInternalForce(force).setCourse(course).build())
-                    .build()
+                game.data.buildModificationsBatch().add(playerObject.id, modification.build()).build()
             ));
         }
 
@@ -191,6 +192,12 @@ goog.require('game.const');
          */
         function (message) {
             this._map.addObjects(message.objects);
+            for (var i = 0; i < message.objects.length; i++) {
+                var object = message.objects[i];
+                if (playerObjectId != null && object.id == playerObjectId) {
+                    playerObject = object;//TODO: re-do this, by saving to map of object new created object BEFORE sending creation message to server, and ignore somehow message from server after that (or server should not send it to the source sender)
+                }
+            }
             redrawScene.call(this);
         }
     );

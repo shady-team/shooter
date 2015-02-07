@@ -162,7 +162,7 @@ goog.require('game.logic');
          * @param {string} id
          */
         function (message, id) {
-            this._map.applyModificationsBatch(message.batch);
+            //this._map.applyModificationsBatch(message.batch); TODO: Nikita, delete this line, if I correctly fixed the bug (double applying modification message on server)
             sendAll.call(this, message);
         }
     );
