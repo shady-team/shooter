@@ -77,9 +77,10 @@ goog.require('game.const');
             if (playerObject === null)
                 return;
 
+            var forcePower = 1000;
             var force = geom.Vector.ZERO,
-                right = new geom.Vector(1000, 0),
-                down = new geom.Vector(0, 1000);
+                right = matrix.Matrix3.rotation(90).translate(playerObject.getCourseVector().multiply(forcePower)),
+                down = playerObject.getCourseVector().multiply(-forcePower);
             var course = playerObject.course,
                 rotatingAngle = 10;
 
@@ -94,9 +95,9 @@ goog.require('game.const');
                 force = force.add(right);
 
             if (keyboardHandler.isKeyDown(input.Key.J))
-                course += rotatingAngle;
-            if (keyboardHandler.isKeyDown(input.Key.K))
                 course -= rotatingAngle;
+            if (keyboardHandler.isKeyDown(input.Key.L))
+                course += rotatingAngle;
 
             server.send(new game.message.ObjectsModificationsMessage(
                 game.data.buildModificationsBatch()
@@ -105,8 +106,20 @@ goog.require('game.const');
             ));
         }
 
+        function fireHandler() {
+            if (playerObject === null)
+                return;
+
+            if (keyboardHandler.isKeyDown(input.Key.K)) {
+                var bullet = playerObject.createBullet();
+                server.send(new game.message.ObjectsCreationMessage([bullet]));
+            }
+        }
+
         keyboardHandler.on(input.E_KEY_DOWN, moveHandler);
         keyboardHandler.on(input.E_KEY_UP, moveHandler);
+        keyboardHandler.on(input.E_KEY_DOWN, fireHandler);
+        keyboardHandler.on(input.E_KEY_UP, fireHandler);
 
         mouseHandler.attachTo(canvas);
         keyboardHandler.attachTo(document.body);

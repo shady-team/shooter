@@ -15,7 +15,7 @@ game.data.ModificationsBatch;
      * @param {?string} id
      * @param {phys.Body.<?>} body
      * @param {visual.TrianglesMesh} mesh
-     * @param {number=} course - in degrees (counterclockwise)
+     * @param {number=} course - in degrees (clockwise)
      * @constructor
      * @implements {rtt.Typed}
      */
@@ -91,6 +91,9 @@ game.data.ModificationsBatch;
         }
         if (util.isDefined(modification.newCourse)) {
             this.course = modification.newCourse;
+            //TODO: fix WARNING - assignment to property course of game.data.PlayerObject
+            //found   : (null|number)
+            //required: number
         }
     };
 
@@ -98,19 +101,21 @@ game.data.ModificationsBatch;
      * @return {geom.Vector} normalized vector of player orientation
      */
     game.data.PlayerObject.prototype.getCourseVector = function () {
-        return new geom.Vector(-Math.sin(this.course), Math.cos(this.course));
+        return new geom.Vector(Math.cos(this.course * Math.PI / 180), Math.sin(this.course * Math.PI / 180));
     };
 
     /**
      * @return {game.data.Bullet}
      */
     game.data.PlayerObject.prototype.createBullet = function () {
-        return new game.data.Bullet(
+        var bullet = new game.data.Bullet(
             null,
             new phys.MotionBody(this.body.position.add(this.getCourseVector().multiply(game.const.player.radius)),
                 new phys.Circle(game.const.bullet.radius), game.const.bullet.weight, game.const.bullet.speed),
             new visual.Circle(game.const.bullet.radius, game.const.bullet.color)
         );
+        bullet.body.internalForce = this.getCourseVector().multiply(game.const.bullet.speed);
+        return bullet;
     };
 
     /**

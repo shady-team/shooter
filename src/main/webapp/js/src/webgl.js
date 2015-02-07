@@ -226,6 +226,7 @@ var WEB_GL_DEBUG = false;
     };
 
     webgl.RED_COLOR = new webgl.Color(0.5, 0, 0, 1.0);
+    webgl.WHITE_COLOR = new webgl.Color(1.0, 1.0, 1.0, 1.0);
     webgl.GREEN_COLOR = new webgl.Color(0, 0.5, 0, 1.0);
     webgl.BLUE_COLOR = new webgl.Color(0, 0, 0.5, 1.0);
 
@@ -237,8 +238,8 @@ var WEB_GL_DEBUG = false;
      */
     webgl.drawTriangles = function (positions, indices, colors) {
         util.assert(indices.length % 3 == 0);
-        util.assert((indices.max() + 1) * 4 == colors.length);
-        util.assert(indices.min() == 0);
+        util.assert((util.maxInArray(indices) + 1) * 4 == colors.length);
+        util.assert(util.minInArray(indices) == 0);
         util.assert(positions.length * 4 == colors.length * 2);
 
         var glProgram = webgl.coloredPolygonProgram;

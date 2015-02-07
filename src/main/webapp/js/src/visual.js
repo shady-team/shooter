@@ -76,8 +76,8 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      */
     visual.TrianglesMesh = function (positions, indices, colors) {
         util.assert(indices.length % 3 == 0);
-        util.assert((indices.max() + 1) * 4 == colors.length);
-        util.assert(indices.min() == 0);
+        util.assert((util.maxInArray(indices) + 1) * 4 == colors.length);
+        util.assert(util.minInArray(indices) == 0);
         util.assert(positions.length * 4 == colors.length * 2);
         this.positions = positions;
         this.indices = indices;
@@ -91,7 +91,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
 
     /**
      * @param {geom.Vector} offset
-     * @param {number} angle - degree of mesh rotation (counterclockwise)
+     * @param {number} angle - degree of mesh rotation (clockwise)
      *      So if angle = 0: mesh will be returned as is
      * @return {Float32Array}
      */
@@ -106,8 +106,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
         }
         for (var j = 0; j < positions.length; j++) {
             positions[j * 2 + 0] = (positions[j * 2 + 0] + offset.x) * 2 / webgl.width - 1;
-            positions[j * 2 + 1] = (positions[j * 2 + 1] + offset.y) * 2 / webgl.height - 1;
-            positions[j * 2 + 1] *= -1;
+            positions[j * 2 + 1] = (webgl.height - (positions[j * 2 + 1] + offset.y)) * 2 / webgl.height - 1;
         }
         return positions;
     };

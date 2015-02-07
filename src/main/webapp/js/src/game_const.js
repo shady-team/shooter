@@ -38,5 +38,5 @@ goog.require('webgl');
     /**
      * @const {webgl.Color}
      */
-    game.const.bullet.color = webgl.RED_COLOR;
+    game.const.bullet.color = webgl.WHITE_COLOR;
 })();

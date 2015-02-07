@@ -200,22 +200,27 @@ var DEBUG = true;
         };
     };
 
-    Uint16Array.prototype.max = function () {//TODO: function with arg
-        var max = this[0];
-        for (var i = 1; i < this.length; i++) {
-            if (this[i] > max) {
-                max = this[i];
-            }
+    /**
+     * @param {Uint16Array} array
+     * @return {number}
+     */
+    util.maxInArray = function (array) {
+        var max = array[0];
+        for (var i = 1; i < array.length; i++) {
+            max = Math.max(array[i], max);
         }
         return max;
     };
 
-    Uint16Array.prototype.min = function () {
-        var min = this[0];
-        for (var i = 1; i < this.length; i++) {
-            if (this[i] < min) {
-                min = this[i];
-            }
+    /**
+     * @param {Uint16Array} array
+     * @return {number}
+     */
+
+    util.minInArray = function (array) {
+        var min = array[0];
+        for (var i = 1; i < array.length; i++) {
+            min = Math.min(array[i], min);
         }
         return min;
     };

@@ -38,7 +38,7 @@ goog.require('geom');
     matrix.Matrix3.ONES = new matrix.Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
 
     /**
-     * @param {number} angle - in degrees (counterclockwise)
+     * @param {number} angle - in degrees (from x axis to y axis (clockwise, if y is going downwards))
      * @return {matrix.Matrix3}
      */
     matrix.Matrix3.rotation = function (angle) {

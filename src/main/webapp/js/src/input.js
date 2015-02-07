@@ -303,6 +303,7 @@ goog.require('events');
         S: charCode('s'),
         D: charCode('d'),
         J: charCode('j'),
-        K: charCode('k')
+        K: charCode('k'),
+        L: charCode('l')
     };
 })();
