@@ -2,6 +2,7 @@ goog.provide('webgl');
 
 goog.require('util');
 goog.require('rtt');
+goog.require('matrix');
 
 /** @const {boolean} */
 var WEB_GL_DEBUG = false;
@@ -25,12 +26,14 @@ var WEB_GL_DEBUG = false;
     var _coloredPolygonVShader = "" +
         "attribute vec2 position;" +
         "attribute vec4 color;" +
+        "uniform mat3 iFrustum;" +
         "" +
         "varying vec4 v_color;" +
         "" +
         "void main()" +
         "{" +
-        "    gl_Position = vec4(position, 0.0, 1.0);" +
+        "    vec3 cameraPosition = iFrustum * vec3(position, 1.0);" +
+        "    gl_Position = vec4(cameraPosition.xy/cameraPosition.z, 0.0, 1.0);" +
         "    v_color = color;" +
         "}";
 
@@ -51,6 +54,8 @@ var WEB_GL_DEBUG = false;
         gl.useProgram(gl_program);
         gl_program.positionAttrib = gl.getAttribLocation(gl_program, 'position');
         gl_program.colorAttrib = gl.getAttribLocation(gl_program, 'color');
+
+        gl_program.frustumUniform = gl.getUniformLocation(gl_program, 'iFrustum');
         gl.useProgram(null);
 
         gl_program.indexBuf = new webgl.VertexBufferObject(gl.ELEMENT_ARRAY_BUFFER);
@@ -232,11 +237,14 @@ var WEB_GL_DEBUG = false;
 
 
     /**
+     * @param {geom.Vector} sceneCenter
+     * @param {geom.Vector} canvasSize
+     * @param {number} sceneWidth
      * @param {Float32Array} positions
      * @param {Uint16Array} indices
      * @param {Float32Array} colors
      */
-    webgl.drawTriangles = function (positions, indices, colors) {
+    webgl.drawTriangles = function (sceneCenter, canvasSize, sceneWidth, positions, indices, colors) {
         util.assert(indices.length % 3 == 0);
         util.assert((util.maxInArray(indices) + 1) * 4 == colors.length);
         util.assert(util.minInArray(indices) == 0);
@@ -261,6 +269,10 @@ var WEB_GL_DEBUG = false;
         colorBuf.unbind();
 
         gl.useProgram(glProgram);
+
+        var translate = matrix.Matrix3.translation(-sceneCenter.x, -sceneCenter.y);
+        var scale = matrix.Matrix3.scaling(2.0 / sceneWidth, -(canvasSize.x / canvasSize.y) * (2.0 / sceneWidth));
+        gl.uniformMatrix3fv(glProgram.frustumUniform, false, scale.dot(translate).transpose().data);
 
         positionBuf.bind();
         gl.enableVertexAttribArray(glProgram.positionAttrib);

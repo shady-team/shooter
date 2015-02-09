@@ -25,36 +25,65 @@ goog.require('game.const');
         this._mouseInputHandler = new input.InputHandler();
         this._keyboardInputHandler = new input.InputHandler();
 
-        initCanvas.call(this);
-        initCanvasEvents.call(this);
-        initClientEvents.call(this);
+        this.initCanvas();
+        this.initCanvasEvents();
+        this.initClientEvents();
     };
 
-    /**
-     * @this {game.client.GameClient}
-     */
-    function initCanvas() {
+    game.client.GameClient.prototype.initCanvas = function() {
         var canvas = this._canvas;
         canvas.width = 640;
         canvas.height = 480;
-    }
+    };
 
     var playerObject = null;
     var playerObjectId = null;
 
     /**
-     * @this {game.client.GameClient}
+     * @return {geom.Vector}
      */
-    function initCanvasEvents() {
+    game.client.GameClient.prototype.getSceneCenter = function () {
+        var cameraCenter = new geom.Vector(320, 240);
+        if (playerObject != null) {
+            cameraCenter = playerObject.body.position;
+        }
+        return cameraCenter;
+    };
+
+    /**
+     * @return {geom.Vector}
+     */
+    game.client.GameClient.prototype.getCanvasSize = function() {
+        return new geom.Vector(this._canvas.width, this._canvas.height);
+    };
+
+    /**
+     * @return {geom.Vector}
+     */
+    game.client.GameClient.prototype.getSceneSize = function() {
+        var sceneWidth = 640;
+        return new geom.Vector(sceneWidth, this._canvas.height * sceneWidth / this._canvas.width)
+    };
+
+    game.client.GameClient.prototype.initCanvasEvents = function() {
         var mouseHandler = this._mouseInputHandler,
             keyboardHandler = this._keyboardInputHandler,
             canvas = this._canvas,
             server = this._server;
 
+        var client = this;
         mouseHandler.on(input.E_MOUSE_UP, function (x, y, button) {
             if (button !== input.Button.LEFT && button !== input.Button.RIGHT)
                 return;
-            var position = new geom.Vector(x, y),
+
+            var sceneCenter = client.getSceneCenter();
+            var canvasCenter = client.getCanvasSize().multiply(0.5);
+            var translate = matrix.Matrix3.translation(-canvasCenter.x, -canvasCenter.y);
+            var scale = matrix.Matrix3.scaling(client.getSceneSize().x / client.getCanvasSize().x, client.getSceneSize().y / client.getCanvasSize().y);
+            var translateToScene = matrix.Matrix3.translation(sceneCenter.x, sceneCenter.y);
+            var canvasToWorld = translateToScene.dot(scale.dot(translate));
+
+            var position = canvasToWorld.translate(new geom.Vector(x, y)),
                 newGameObject;
             if (button === input.Button.LEFT) {
                 newGameObject = new game.data.GameObject(
@@ -124,16 +153,13 @@ goog.require('game.const');
 
         mouseHandler.attachTo(canvas);
         keyboardHandler.attachTo(document.body);
-    }
+    };
 
-    /**
-     * @this {game.client.GameClient}
-     */
-    function initClientEvents() {
+    game.client.GameClient.prototype.initClientEvents = function() {
         var server = this._server;
         server.on(events.E_MESSAGE, onMessage.bind(this));
         server.on(events.E_OPEN, util.noop); // ensures that local server receives open message. do not put before registering on E_MESSAGE!
-    }
+    };
 
     /**
      * @param {game.data.GameObject} object
@@ -163,7 +189,8 @@ goog.require('game.const');
      * @this {game.client.GameClient}
      */
     function redrawScene() {
-        this._scene.drawScene(this._map.getObjectsSnapshot(), unwrapMesh, unwrapPosition, unwrapCourse);
+        this._scene.drawScene(this.getSceneCenter(), this.getCanvasSize(), this.getSceneSize().x,
+            this._map.getObjectsSnapshot(), unwrapMesh, unwrapPosition, unwrapCourse);
     }
 
     var handlersHolder = new game.message.MessageHandlersHolder();
@@ -179,6 +206,7 @@ goog.require('game.const');
     handlersHolder.registerHandler(game.message.ObjectsModificationsMessage.prototype.type,
         /**
          * @param {game.message.ObjectsModificationsMessage} message
+         * @this {game.client.GameClient}
          */
         function (message) {
             this._map.applyModificationsBatch(message.batch);
@@ -189,6 +217,7 @@ goog.require('game.const');
     handlersHolder.registerHandler(game.message.ObjectsCreationMessage.prototype.type,
         /**
          * @param {game.message.ObjectsCreationMessage} message
+         * @this {game.client.GameClient}
          */
         function (message) {
             this._map.addObjects(message.objects);

@@ -18,12 +18,16 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
 
     /**
      * @template T
+     * @param {geom.Vector} sceneCenter
+     * @param {geom.Vector} canvasSize
+     * @param {number} sceneWidth
      * @param {Array.<T>} wrappers
      * @param {function(T):visual.TrianglesMesh} unwrapper
      * @param {function(T):geom.Vector} positionExtractor
      * @param {function(T):number} angleExtractor
      */
-    visual.Scene.prototype.drawScene = function (wrappers, unwrapper, positionExtractor, angleExtractor) {
+    visual.Scene.prototype.drawScene = function (sceneCenter, canvasSize, sceneWidth,
+                                                 wrappers, unwrapper, positionExtractor, angleExtractor) {
         var positionsArrays = [],
             indicesArrays = [],
             colorsArrays = [],
@@ -63,7 +67,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             pointOffset += positions.length / 2;
             indicesOffset += indices.length;
         }
-        webgl.drawTriangles(allPositions, allIndices, allColors);
+        webgl.drawTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors);
     };
 
 
@@ -97,7 +101,6 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      */
     visual.TrianglesMesh.prototype.getPositions = function (offset, angle) {
         var positions = new Float32Array(this.positions);
-        //TODO: implement world coords to camera coords via one matrix
         var rotation = matrix.Matrix3.rotation(angle);
         for (var i = 0; i < positions.length; i++) {
             var xy = rotation.translate(new geom.Vector(positions[i * 2 + 0], positions[i * 2 + 1]));
@@ -105,8 +108,8 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             positions[i * 2 + 1] = xy.y;
         }
         for (var j = 0; j < positions.length; j++) {
-            positions[j * 2 + 0] = (positions[j * 2 + 0] + offset.x) * 2 / webgl.width - 1;
-            positions[j * 2 + 1] = (webgl.height - (positions[j * 2 + 1] + offset.y)) * 2 / webgl.height - 1;
+            positions[j * 2 + 0] = positions[j * 2 + 0] + offset.x;
+            positions[j * 2 + 1] = positions[j * 2 + 1] + offset.y;
         }
         return positions;
     };

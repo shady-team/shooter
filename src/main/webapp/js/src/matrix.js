@@ -62,6 +62,18 @@ goog.require('geom');
     };
 
     /**
+     * @param {number} mx - multiplier for x
+     * @param {number} my - multiplier for y
+     * @return {matrix.Matrix3}
+     */
+    matrix.Matrix3.scaling = function (mx, my) {
+        return new matrix.Matrix3(
+            mx, 0, 0,
+            0, my, 0,
+            0, 0, 1);
+    };
+
+    /**
      * @param {matrix.Matrix3} that
      * @return {matrix.Matrix3}
      */
@@ -85,6 +97,17 @@ goog.require('geom');
         var c21 = a20 * b01 + a21 * b11 + a22 * b21;
         var c22 = a20 * b02 + a21 * b12 + a22 * b22;
         return new matrix.Matrix3(c00, c01, c02, c10, c11, c12, c20, c21, c22);
+    };
+
+    /**
+     * @return {matrix.Matrix3}
+     */
+    matrix.Matrix3.prototype.transpose = function () {
+        var a00 = this.data[0], a01 = this.data[1], a02 = this.data[2],
+            a10 = this.data[3], a11 = this.data[4], a12 = this.data[5],
+            a20 = this.data[6], a21 = this.data[7], a22 = this.data[8];
+
+        return new matrix.Matrix3(a00, a10, a20, a01, a11, a21, a02, a12, a22);
     };
 
     /**
