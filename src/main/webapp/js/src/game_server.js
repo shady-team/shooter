@@ -182,8 +182,13 @@ goog.require('game.logic');
         sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
     }
 
+    function sendDeletionsUpdate(batch) {
+        sendAll.call(this, new game.message.ObjectsDeletionsMessage(batch));
+    }
+
     function initGameLogic() {
         this._map.on(game.logic.E_OBJECTS_MODIFIED, sendPhysicsUpdate.bind(this));
+        this._map.on(game.logic.E_OBJECTS_DELETED, sendDeletionsUpdate.bind(this));
         this._map.startPhysics(20);
     }
 })();

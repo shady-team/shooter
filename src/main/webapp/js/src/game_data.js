@@ -15,24 +15,43 @@ game.data.ModificationsBatch;
      * @param {?string} id
      * @param {phys.Body.<?>} body
      * @param {visual.TrianglesMesh} mesh
-     * @param {number=} course - in degrees (clockwise)
      * @constructor
      * @implements {rtt.Typed}
      */
-    game.data.GameObject = function (id, body, mesh, course) {
+    game.data.GameObject = function (id, body, mesh) {
         this.id = id || util.genUUID();
         this.body = body;
         this.mesh = mesh;
-        if (!course) {
-            course = 0;
-        }
-        /**
-         * @type {number}
-         */
-        this.course = course;//TODO: migrate to phys.Body. But for now it is only needed for PlayerObject rendering (circle)
+        this.course = 0;
+        this.hitPoints = Infinity;
     };
 
     game.data.GameObject.prototype.type = rtt.registerType(game.data.GameObject.prototype, 'game.data.GameObject');
+
+    /**
+     * @param {number} course - in degrees (clockwise)
+     */
+    game.data.GameObject.prototype.setCourse = function (course) {
+        this.course = course;//TODO: migrate to phys.Body. But for now it is only needed for PlayerObject rendering (circle)
+    };
+
+    /**
+     * @param {number} hitPoints - how much damage summary this object can withstand
+     */
+    game.data.GameObject.prototype.setHitPoints = function (hitPoints) {
+        this.hitPoints = hitPoints;
+    };
+
+    game.data.GameObject.prototype.hit = function () {
+        this.hitPoints -= 1;
+    };
+
+    /**
+     * @return {boolean}
+     */
+    game.data.GameObject.prototype.isDestroyed = function () {
+        return this.hitPoints <= 0;
+    };
 
     /**
      * @param {game.data.GameObjectModification} modification
@@ -46,6 +65,9 @@ game.data.ModificationsBatch;
         }
         if (util.isDefined(modification.addToCourse)) {
             this.course += modification.addToCourse;
+        }
+        if (util.isDefined(modification.deltaHitPoints)) {
+            this.hitPoints += modification.deltaHitPoints;
         }
     };
 
@@ -107,11 +129,13 @@ game.data.ModificationsBatch;
     game.data.PlayerObject.prototype.createBullet = function () {
         var bullet = new game.data.Bullet(
             null,
-            new phys.MotionBody(this.body.position.add(this.getCourseVector().multiply(game.const.player.radius + game.const.bullet.radius)),
+            new phys.MotionBody(this.body.position.add(this.getCourseVector().multiply(game.const.player.radius + game.const.bullet.radius + EPS)),
                 new phys.Circle(game.const.bullet.radius), game.const.bullet.weight, game.const.bullet.speed),
             new visual.Circle(game.const.bullet.radius, game.const.bullet.color)
         );
-        bullet.body.internalForce = this.getCourseVector().multiply(game.const.bullet.speed);
+        bullet.setHitPoints(1);
+        bullet.body.speed = this.getCourseVector().multiply(game.const.bullet.speed);
+        bullet.body.internalForce = this.getCourseVector().multiply(game.const.bullet.speed * game.const.bullet.weight);
         return bullet;
     };
 
@@ -125,6 +149,11 @@ game.data.ModificationsBatch;
      * @type {?geom.Vector}
      */
     game.data.GameObjectModification.prototype.newPosition;
+
+    /**
+     * @type {?number}
+     */
+    game.data.GameObjectModification.prototype.deltaHitPoints;
 
     /**
      * @type {?geom.Vector}
@@ -163,6 +192,15 @@ game.data.ModificationsBatch;
      */
     game.data.ModificationBuilder.prototype.setPosition = function (position) {
         this._modification.newPosition = position;
+        return this;
+    };
+
+    /**
+     * @param {number} deltaHitPoints
+     * @return {game.data.ModificationBuilder} this
+     */
+    game.data.ModificationBuilder.prototype.setDeltaHitPoints = function (deltaHitPoints) {
+        this._modification.deltaHitPoints = deltaHitPoints;
         return this;
     };
 

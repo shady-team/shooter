@@ -54,6 +54,11 @@ var G = PIXEL_PER_METER * 9.807;
     game.logic.E_OBJECTS_MODIFIED = 'objects_modified';
 
     /**
+     * @const {string}
+     */
+    game.logic.E_OBJECTS_DELETED = 'objects_deleted';
+
+    /**
      * @this {game.logic.Map}
      * @param {game.data.GameObject} object
      */
@@ -78,11 +83,15 @@ var G = PIXEL_PER_METER * 9.807;
     };
 
     /**
-     * @param {game.data.GameObject} object
+     * @param {string} id
      */
-    game.logic.Map.prototype.removeObject = function (object) {
-        this._objects.splice(this._objects.indexOf(object), 1);
-        removeFromMap.call(this, object);
+    game.logic.Map.prototype.removeObject = function (id) {
+        console.log('Deleting id=' + id);
+        var object = this._idToObject[id];
+        if (util.isDefined(object)) {
+            this._objects.splice(this._objects.indexOf(object), 1);
+            removeFromMap.call(this, object);
+        }
     };
 
     /**
@@ -93,8 +102,9 @@ var G = PIXEL_PER_METER * 9.807;
         for (id in batch) {
             modification = batch[id];
             target = this._idToObject[id];
-            util.assertDefined(target, "Modification has no target");
-            target.applyModification(modification);
+            if (util.isDefined(target)) {
+                target.applyModification(modification);
+            }
         }
     };
 
@@ -106,32 +116,55 @@ var G = PIXEL_PER_METER * 9.807;
         return object.body;
     }
 
+    /**
+     * @param {game.data.GameObject} object
+     * @param {game.data.GameObject} target
+     */
+    function collisionHandler(object, target) {
+        if (object.type == game.data.Bullet.prototype.type) {
+            target.hit();
+            object.hit();
+        }
+    }
+
     game.logic.Map.prototype.validatePhysics = function () {
         var now = Date.now();
         if (util.isDefined(this._lastUpdate)) {
             var oldPositions = {},
+                oldHitPoints = {},
                 batchBuilder = game.data.buildModificationsBatch(),
-                batch;
+                modificationBatch,
+                deletedIds = [];
             this._objects.forEach(function (object) {
                 oldPositions[object.id] = object.body.position;
+                oldHitPoints[object.id] = object.hitPoints;
             });
-            this._world.simulate(this._objects, unwrapGameObject, (now - this._lastUpdate) / 1000);
+            this._world.simulate(this._objects, unwrapGameObject, (now - this._lastUpdate) / 1000, collisionHandler);
+
             this._objects.forEach(function (object) {
                 var id = object.id,
                     oldPosition = oldPositions[id],
                     newPosition = object.body.position;
-                if (!oldPosition.approximatelyEqual(newPosition)) {
-                    batchBuilder.add(
-                        id,
-                        game.data.buildModification()
-                            .setPosition(newPosition)
-                            .build()
-                    );
+                if (!oldPosition.approximatelyEqual(newPosition) || oldHitPoints[id] != object.hitPoints) {
+                    var modification = game.data.buildModification();
+                    if (!oldPosition.approximatelyEqual(newPosition)) {
+                        modification.setPosition(newPosition);
+                    }
+                    if (oldHitPoints[id] != object.hitPoints) {
+                        modification.setDeltaHitPoints(object.hitPoints - oldHitPoints[id]);
+                    }
+                    batchBuilder.add(id, modification.build());
+                }
+                if (object.isDestroyed()) {
+                    deletedIds.push(id);
                 }
             });
-            batch = batchBuilder.build();
-            if (!util.isObjectEmpty(batch)) {
-                this.fire(game.logic.E_OBJECTS_MODIFIED, batch);
+            modificationBatch = batchBuilder.build();
+            if (!util.isObjectEmpty(modificationBatch)) {
+                this.fire(game.logic.E_OBJECTS_MODIFIED, modificationBatch);
+            }
+            if (deletedIds.length > 0) {
+                this.fire(game.logic.E_OBJECTS_DELETED, deletedIds);
             }
         }
         this._lastUpdate = now;

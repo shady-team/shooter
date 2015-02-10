@@ -230,4 +230,18 @@ goog.require('game.const');
             redrawScene.call(this);
         }
     );
+
+    handlersHolder.registerHandler(game.message.ObjectsDeletionsMessage.prototype.type,
+        /**
+         * @param {game.message.ObjectsDeletionsMessage} message
+         * @this {game.client.GameClient}
+         */
+        function (message) {
+            for (var i = 0; i < message.ids.length; i++) {
+                var id = message.ids[i];
+                this._map.removeObject(id);
+            }
+            redrawScene.call(this);
+        }
+    );
 })();

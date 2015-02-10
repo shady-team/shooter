@@ -85,6 +85,21 @@ goog.require('game.data');
         = rtt.registerType(game.message.ObjectsCreationMessage.prototype, "game.message.ObjectsCreationMessage");
 
     /**
+     * @param {Array.<string>} ids
+     * @constructor
+     * @implements {game.message.Message}
+     */
+    game.message.ObjectsDeletionsMessage = function (ids) {
+        this.ids = ids;
+    };
+
+    /**
+     * @const {string}
+     */
+    game.message.ObjectsDeletionsMessage.prototype.type
+        = rtt.registerType(game.message.ObjectsDeletionsMessage.prototype, "game.message.ObjectsDeletionsMessage");
+
+    /**
      * @constructor
      */
     game.message.MessageHandlersHolder = function () {

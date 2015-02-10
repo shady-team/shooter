@@ -133,7 +133,7 @@ var RIGIDNESS = 100;
         var norm = this.internalForce.normalized(),
             speed = this.speed.dot(norm),
             left = Math.max(0, this.maxSpeed - speed),
-            addition = Math.min(left, this.internalForce.length() * time);
+            addition = Math.min(left, (this.internalForce.length() / this.weight) * time);
         this.speed = this.speed.add(norm.multiply(addition));
     };
 
@@ -350,8 +350,9 @@ var RIGIDNESS = 100;
      * @param {Array.<T>} wrappers
      * @param {?function(T):phys.Body.<?>} unwrapper
      * @param {number} time
+     * @param {function(T, T)=} collisionCallback
      */
-    phys.World.prototype.simulate = function (wrappers, unwrapper, time) {
+    phys.World.prototype.simulate = function (wrappers, unwrapper, time, collisionCallback) {
         var i, j,
             n = wrappers.length,
             impulses = util.arrayOf(n, geom.Vector.ZERO);
@@ -362,6 +363,12 @@ var RIGIDNESS = 100;
             for (j = i + 1; j < n; ++j) {
                 var b = unwrapper.call(null, wrappers[j]);
                 var effect = phys.collide(a, b);
+                if (effect != ZERO_COLLISION_EFFECT && util.isDefined(collisionCallback)) {
+                    collisionCallback(wrappers[i], wrappers[j]);
+                    collisionCallback(wrappers[j], wrappers[i]);
+                    //TODO: Note, that if step between simulation or speed is big enough - the object can 'jump' over another object
+                    // So this should check intersection of segments between old and new positions
+                }
                 impulses[i] = impulses[i].add(effect.impulse).add(effect.force.multiply(time));
                 impulses[j] = impulses[j].subtract(effect.impulse).subtract(effect.force.multiply(time));
             }
