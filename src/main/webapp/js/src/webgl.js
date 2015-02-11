@@ -234,6 +234,8 @@ var WEB_GL_DEBUG = false;
     webgl.WHITE_COLOR = new webgl.Color(1.0, 1.0, 1.0, 1.0);
     webgl.GREEN_COLOR = new webgl.Color(0, 0.5, 0, 1.0);
     webgl.BLUE_COLOR = new webgl.Color(0, 0, 0.5, 1.0);
+    webgl.LIGHT_BLUE_COLOR = new webgl.Color(0.53, 0.81, 0.94, 1.0);
+    webgl.LIGHT_BROWN_COLOR = new webgl.Color(0.50, 0.28, 0.10, 1.0);
 
 
     /**

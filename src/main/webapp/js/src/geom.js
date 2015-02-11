@@ -28,6 +28,16 @@ var EPS = 1e-4;
     };
 
     /**
+     * @param {!number} course
+     * @param {!number} length
+     * @return {geom.Vector}
+     */
+    geom.Vector.createPolarVector = function(course, length) {
+        return new geom.Vector(Math.cos(course * Math.PI / 180) * length,
+            Math.sin(course * Math.PI / 180) * length);
+    };
+
+    /**
      * @static
      * @const {geom.Vector}
      */

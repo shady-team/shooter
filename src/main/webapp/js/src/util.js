@@ -95,6 +95,13 @@ var DEBUG = true;
     };
 
     /**
+     * @return {number} between -1.0 and 1.0. Mostly near zero.
+     */
+    util.randomNormalDistribution = function() {
+        return (Math.random() * 2 - 1) + (Math.random() * 2 - 1) + (Math.random() * 2 - 1);
+    };
+
+    /**
      * @param {*} value
      * @return {boolean}
      */
@@ -180,7 +187,7 @@ var DEBUG = true;
     };
 
     /**
-     * @param {number} delay
+     * @param {number} delay in ms
      * @param {Function} func
      * @return {Function}
      */
@@ -205,11 +212,7 @@ var DEBUG = true;
      * @return {number}
      */
     util.maxInArray = function (array) {
-        var max = array[0];
-        for (var i = 1; i < array.length; i++) {
-            max = Math.max(array[i], max);
-        }
-        return max;
+        return Math.max.apply(Math, array);
     };
 
     /**
@@ -218,10 +221,6 @@ var DEBUG = true;
      */
 
     util.minInArray = function (array) {
-        var min = array[0];
-        for (var i = 1; i < array.length; i++) {
-            min = Math.min(array[i], min);
-        }
-        return min;
+        return Math.min.apply(Math, array);
     };
 })();

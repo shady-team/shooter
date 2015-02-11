@@ -130,11 +130,9 @@ var RIGIDNESS = 100;
     phys.MotionBody.prototype.applyInternal = function (time) {
         if (this.internalForce.approximatelyEqual(geom.Vector.ZERO))
             return;
-        var norm = this.internalForce.normalized(),
-            speed = this.speed.dot(norm),
-            left = Math.max(0, this.maxSpeed - speed),
-            addition = Math.min(left, (this.internalForce.length() / this.weight) * time);
-        this.speed = this.speed.add(norm.multiply(addition));
+        var newSpeed = this.speed.add(this.internalForce.multiply(time / this.weight));
+        var limitedSpeed = Math.min(newSpeed.length(), this.maxSpeed);
+        this.speed = newSpeed.multiply(limitedSpeed / newSpeed.length());
     };
 
     /**
@@ -223,7 +221,7 @@ var RIGIDNESS = 100;
             util.assert(a !== b, "colliding body with itself");
             var move = a.position.subtract(b.position),
                 delta = a.shape.radius + b.shape.radius - move.length();
-            if (delta < EPS) {
+            if (delta < EPS || move.approximatelyEqual(geom.Vector.ZERO)) {
                 return ZERO_COLLISION_EFFECT;
             }
             var norm = move.normalized(),
@@ -244,7 +242,8 @@ var RIGIDNESS = 100;
         function (circ, rect) {
             var move = circ.position.subtract(rect.position);
             if (Math.abs(move.x) > circ.shape.radius + rect.shape.width / 2 - EPS
-                || Math.abs(move.y) > circ.shape.radius + rect.shape.height / 2 - EPS) {
+                || Math.abs(move.y) > circ.shape.radius + rect.shape.height / 2 - EPS
+                || move.approximatelyEqual(geom.Vector.ZERO)) {
                 return ZERO_COLLISION_EFFECT;
             }
             var diagLeft = new geom.Vector(-rect.shape.width / 2, -rect.shape.height / 2),

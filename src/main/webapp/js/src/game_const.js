@@ -15,7 +15,7 @@ goog.require('webgl');
     /**
      * @const {number}
      */
-    game.const.player.maxSpeed = 100;
+    game.const.player.maxSpeed = 200;
     /**
      * @const {number}
      */
@@ -34,9 +34,17 @@ goog.require('webgl');
     /**
      * @const {number}
      */
-    game.const.bullet.speed = 200;
+    game.const.bullet.speed = 300;
     /**
      * @const {webgl.Color}
      */
     game.const.bullet.color = webgl.WHITE_COLOR;
+    /**
+     * @const {number}
+     */
+    game.const.bullet.spreadAngle = 5;
+    /**
+     * @const {number} in ms
+     */
+    game.const.bullet.shootDelay = 60;
 })();

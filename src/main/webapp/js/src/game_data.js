@@ -47,6 +47,12 @@ game.data.ModificationsBatch;
     };
 
     /**
+     * @param {game.data.GameObject} target
+     */
+    game.data.GameObject.prototype.collideWith = function (target) {
+    };
+
+    /**
      * @return {boolean}
      */
     game.data.GameObject.prototype.isDestroyed = function () {
@@ -85,6 +91,14 @@ game.data.ModificationsBatch;
     rtt.extend(game.data.Bullet, game.data.GameObject, 'game.data.Bullet');
 
     /**
+     * @param {game.data.GameObject} target
+     */
+    game.data.Bullet.prototype.collideWith = function (target) {
+        target.hit();
+        this.hit();
+    };
+
+    /**
      * @param {?string} id
      * @param {phys.MotionBody.<?>} body
      * @param {visual.TrianglesMesh} mesh
@@ -120,7 +134,7 @@ game.data.ModificationsBatch;
      * @return {geom.Vector} normalized vector of player orientation
      */
     game.data.PlayerObject.prototype.getCourseVector = function () {
-        return new geom.Vector(Math.cos(this.course * Math.PI / 180), Math.sin(this.course * Math.PI / 180));
+        return geom.Vector.createPolarVector(this.course, 1.0);
     };
 
     /**
@@ -134,7 +148,8 @@ game.data.ModificationsBatch;
             new visual.Circle(game.const.bullet.radius, game.const.bullet.color)
         );
         bullet.setHitPoints(1);
-        bullet.body.speed = this.getCourseVector().multiply(game.const.bullet.speed);
+        var bulletCourse = this.course + util.randomNormalDistribution() * game.const.bullet.spreadAngle / 2.0;
+        bullet.body.speed = geom.Vector.createPolarVector(bulletCourse, game.const.bullet.speed);
         bullet.body.internalForce = this.getCourseVector().multiply(game.const.bullet.speed * game.const.bullet.weight);
         return bullet;
     };

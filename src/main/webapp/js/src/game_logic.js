@@ -121,10 +121,7 @@ var G = PIXEL_PER_METER * 9.807;
      * @param {game.data.GameObject} target
      */
     function collisionHandler(object, target) {
-        if (object.type == game.data.Bullet.prototype.type) {
-            target.hit();
-            object.hit();
-        }
+        object.collideWith(target);
     }
 
     game.logic.Map.prototype.validatePhysics = function () {

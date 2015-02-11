@@ -18,6 +18,12 @@ goog.require('game.logic');
          * @private
          */
         this._clients = [];
+        var glass = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 360),
+            new phys.Rectangle(20, 200), Infinity), new visual.Rectangle(20, 200, webgl.LIGHT_BLUE_COLOR));
+        glass.setHitPoints(1);
+        var woodenBlock = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 120),
+            new phys.Rectangle(20, 200), Infinity), new visual.Rectangle(20, 200, webgl.LIGHT_BROWN_COLOR));
+        woodenBlock.setHitPoints(5);
         /**
          * @type {game.logic.Map}
          * @private
@@ -30,7 +36,9 @@ goog.require('game.logic');
             new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 10),
                 new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
             new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 470),
-                new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR))
+                new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
+            glass,
+            woodenBlock
         ]);
         initServerEvents.call(this);
         initGameLogic.call(this);
@@ -174,6 +182,19 @@ goog.require('game.logic');
          */
         function (message, id) {
             this._map.addObjects(message.objects);
+            sendAll.call(this, message);
+        }
+    );
+
+    handlersHolder.registerHandler(game.message.ObjectsDeletionsMessage.prototype.type,
+        /**
+         * @param {game.message.ObjectsDeletionsMessage} message
+         * @param {string} id
+         */
+        function (message, id) {
+            for (var i = 0; i < message.ids.length; i++) {
+                this._map.removeObject(message.ids[i]);
+            }//TODO: fix bug with deleting objects - bullets became invisible, but they are still material in physical calculations
             sendAll.call(this, message);
         }
     );

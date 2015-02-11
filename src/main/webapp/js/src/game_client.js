@@ -25,6 +25,10 @@ goog.require('game.const');
         this._mouseInputHandler = new input.InputHandler();
         this._keyboardInputHandler = new input.InputHandler();
 
+        this.playerObject = null;
+        this.playerObjectId = null;
+        this.lastCameraPosition = new geom.Vector(320, 240);
+
         this.initCanvas();
         this.initCanvasEvents();
         this.initClientEvents();
@@ -36,16 +40,14 @@ goog.require('game.const');
         canvas.height = 480;
     };
 
-    var playerObject = null;
-    var playerObjectId = null;
-
     /**
      * @return {geom.Vector}
      */
     game.client.GameClient.prototype.getSceneCenter = function () {
-        var cameraCenter = new geom.Vector(320, 240);
-        if (playerObject != null) {
-            cameraCenter = playerObject.body.position;
+        var cameraCenter = this.lastCameraPosition;
+        if (this.playerObject !== null) {
+            cameraCenter = this.playerObject.body.position;
+            this.lastCameraPosition = cameraCenter;
         }
         return cameraCenter;
     };
@@ -98,19 +100,20 @@ goog.require('game.const');
                         game.const.player.weight, game.const.player.maxSpeed),
                     new visual.OrientedCircle(game.const.player.radius, webgl.RED_COLOR, game.const.player.removedAngle)
                 );
-                playerObjectId = newGameObject.id;
+                newGameObject.setHitPoints(5);
+                client.playerObjectId = newGameObject.id;
             }
             server.send(new game.message.ObjectsCreationMessage([newGameObject]));
         });
 
         function moveHandler() {
-            if (playerObject === null)
+            if (client.playerObject === null)
                 return;
 
             var forcePower = 1000;
             var force = geom.Vector.ZERO,
-                right = matrix.Matrix3.rotation(90).translate(playerObject.getCourseVector().multiply(forcePower)),
-                down = playerObject.getCourseVector().multiply(-forcePower);
+                right = matrix.Matrix3.rotation(90).translate(client.playerObject.getCourseVector().multiply(forcePower)),
+                down = client.playerObject.getCourseVector().multiply(-forcePower);
             var addToCourse = 0,
                 rotatingAngle = 10;
 
@@ -132,23 +135,23 @@ goog.require('game.const');
             var modification = game.data.buildModification().setInternalForce(force).setAddToCourse(addToCourse);
 
             server.send(new game.message.ObjectsModificationsMessage(
-                game.data.buildModificationsBatch().add(playerObject.id, modification.build()).build()
+                game.data.buildModificationsBatch().add(client.playerObject.id, modification.build()).build()
             ));
         }
 
         function fireHandler() {
-            if (playerObject === null)
+            if (client.playerObject === null)
                 return;
 
             if (keyboardHandler.isKeyDown(input.Key.K)) {
-                var bullet = playerObject.createBullet();
+                var bullet = client.playerObject.createBullet();
                 server.send(new game.message.ObjectsCreationMessage([bullet]));
             }
         }
 
         keyboardHandler.on(input.E_KEY_DOWN, moveHandler);
         keyboardHandler.on(input.E_KEY_UP, moveHandler);
-        keyboardHandler.on(input.E_KEY_DOWN, fireHandler);
+        keyboardHandler.on(input.E_KEY_DOWN, util.throttle(game.const.bullet.shootDelay, fireHandler));
         keyboardHandler.on(input.E_KEY_UP, fireHandler);
 
         mouseHandler.attachTo(canvas);
@@ -223,8 +226,8 @@ goog.require('game.const');
             this._map.addObjects(message.objects);
             for (var i = 0; i < message.objects.length; i++) {
                 var object = message.objects[i];
-                if (playerObjectId != null && object.id == playerObjectId) {
-                    playerObject = object;//TODO: re-do this, by saving to map of object new created object BEFORE sending creation message to server, and ignore somehow message from server after that (or server should not send it to the source sender)
+                if (this.playerObjectId !== null && object.id == this.playerObjectId) {
+                    this.playerObject = object;//TODO: re-do this, by saving to map of object new created object BEFORE sending creation message to server, and ignore somehow message from server after that (or server should not send it to the source sender)
                 }
             }
             redrawScene.call(this);
@@ -239,6 +242,10 @@ goog.require('game.const');
         function (message) {
             for (var i = 0; i < message.ids.length; i++) {
                 var id = message.ids[i];
+                if (id == this.playerObjectId) {//TODO: think about implementing this in event (with type=id) driven style
+                    this.playerObject = null;
+                    this.playerObjectId = null;
+                }
                 this._map.removeObject(id);
             }
             redrawScene.call(this);
