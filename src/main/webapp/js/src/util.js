@@ -187,6 +187,18 @@ var DEBUG = true;
     };
 
     /**
+     * @param {*} object
+     * @return {number}
+     */
+    util.mapSize = function (object) {
+        var size = 0;
+        for (var prop in object) {
+            size += 1;
+        }
+        return size;
+    };
+
+    /**
      * @param {number} delay in ms
      * @param {Function} func
      * @return {Function}
@@ -222,5 +234,21 @@ var DEBUG = true;
 
     util.minInArray = function (array) {
         return Math.min.apply(Math, array);
+    };
+
+    /**
+     * @template T
+     * @param {Object.<?, T>} map
+     * @return {T}
+     */
+    util.pickRandom = function (map) {
+        var index = Math.random() * util.mapSize(map) - 1;
+        var i = 0;
+        for (var prop in map) {
+            if (i > index)
+                return map[prop];
+            i += 1;
+        }
+        return undefined;
     };
 })();

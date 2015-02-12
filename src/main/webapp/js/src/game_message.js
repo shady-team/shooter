@@ -100,6 +100,21 @@ goog.require('game.data');
         = rtt.registerType(game.message.ObjectsDeletionsMessage.prototype, "game.message.ObjectsDeletionsMessage");
 
     /**
+     * @param {Object.<string, game.logic.Team>} teams
+     * @constructor
+     * @implements {game.message.Message}
+     */
+    game.message.TeamsMessage = function (teams) {
+        this.teams = teams;
+    };
+
+    /**
+     * @const {string}
+     */
+    game.message.TeamsMessage.prototype.type
+        = rtt.registerType(game.message.TeamsMessage.prototype, "game.message.TeamsMessage");
+
+    /**
      * @constructor
      */
     game.message.MessageHandlersHolder = function () {

@@ -190,7 +190,7 @@ goog.require('events');
     function keyUpHandler(evt) {
         updateKeyboardState(this._keyboardState, evt);
         this.fire(input.E_KEY_UP, evt.keyCode);
-        this._deactivate(input.E_KEY_IS_DOWN);
+        this.deactivate(input.E_KEY_IS_DOWN);
     }
 
     /**
@@ -200,7 +200,7 @@ goog.require('events');
     function keyDownHandler(evt) {
         updateKeyboardState(this._keyboardState, evt);
         this.fire(input.E_KEY_DOWN, evt.keyCode);
-        this._activate(input.E_KEY_IS_DOWN);
+        this.activate(input.E_KEY_IS_DOWN);
     }
 
     /**

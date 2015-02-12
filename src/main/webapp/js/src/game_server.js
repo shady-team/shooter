@@ -18,6 +18,7 @@ goog.require('game.logic');
          * @private
          */
         this._clients = [];
+
         var glass = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 360),
             new phys.Rectangle(20, 200), Infinity), new visual.Rectangle(20, 200, webgl.LIGHT_BLUE_COLOR));
         glass.setHitPoints(1);
@@ -29,6 +30,9 @@ goog.require('game.logic');
          * @private
          */
         this._map = new game.logic.Map([
+            new game.logic.Team('GreenTeam', new geom.Rectangle(new geom.Vector(100, 100), new geom.Vector(120, 120)), webgl.GREEN_COLOR),
+            new game.logic.Team('BlueTeam', new geom.Rectangle(new geom.Vector(540, 300), new geom.Vector(560, 320)), webgl.BLUE_COLOR)
+            ], [
             new game.data.GameObject(null, new phys.Body(new geom.Vector(10, 240),
                 new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
             new game.data.GameObject(null, new phys.Body(new geom.Vector(630, 240),
@@ -161,6 +165,7 @@ goog.require('game.logic');
                 return client !== id;
             }))
         );
+        sendTo.call(this, id, new game.message.TeamsMessage(this._map.teams));
         sendTo.call(this, id, new game.message.ObjectsCreationMessage(this._map.getObjectsSnapshot()));
     }
 
@@ -170,7 +175,7 @@ goog.require('game.logic');
          * @param {string} id
          */
         function (message, id) {
-            //this._map.applyModificationsBatch(message.batch); TODO: Nikita, delete this line, if I correctly fixed the bug (double applying modification message on server)
+            //this.map.applyModificationsBatch(message.batch); TODO: Nikita, delete this line, if I correctly fixed the bug (double applying modification message on server)
             sendAll.call(this, message);
         }
     );

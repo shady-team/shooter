@@ -154,6 +154,26 @@ var EPS = 1e-4;
         return this.a.subtract(this.b).length();
     };
 
+
+    /**
+     * @param {geom.Vector} a - one corner
+     * @param {geom.Vector} b - second corner
+     * @constructor
+     * @implements {geom.Primitive}
+     */
+    geom.Rectangle = function Segment(a, b) {
+        /** @const */
+        this.a = a;
+        /** @const */
+        this.b = b;
+    };
+
+    var rectangleType = rtt.registerType(geom.Rectangle.prototype, 'geom.Rectangle');
+    /**
+     * @const {string}
+     */
+    geom.Rectangle.prototype.type = rectangleType;
+
     var distance = new rtt.MutliMethod;
 
     /**

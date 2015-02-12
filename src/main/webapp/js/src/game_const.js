@@ -20,6 +20,10 @@ goog.require('webgl');
      * @const {number}
      */
     game.const.player.removedAngle = 30;
+    /**
+     * @const {number} - in ms
+     */
+    game.const.player.respawnTime = 500;
 
 
     game.const.bullet = {};

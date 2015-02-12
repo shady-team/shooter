@@ -12,12 +12,20 @@ var G = PIXEL_PER_METER * 9.807;
 
 (function () {
     /**
+     * @param {Array.<game.logic.Team>} teams
      * @param {Array.<game.data.GameObject>} objects
      * @constructor
-     * @extends {events.WithEvents}
+     * @extends {events.WithRegularEvents}
      */
-    game.logic.Map = function (objects) {
-        events.WithEvents.call(this);
+    game.logic.Map = function (teams, objects) {
+        events.WithRegularEvents.call(this);
+        /**
+         * @type {Object.<string, game.logic.Team>}
+         */
+        this.teams = util.emptyObject();
+        for (var i = 0; i < teams.length; i++) {
+            this.teams[teams[i].name] = teams[i];
+        }
         /**
          * @type {Array.<game.data.GameObject>}
          * @private
@@ -46,7 +54,39 @@ var G = PIXEL_PER_METER * 9.807;
         objects.forEach(putToMap, this);
     };
 
-    game.logic.Map.prototype = Object.create(events.WithEvents.prototype);
+    game.logic.Map.prototype = Object.create(events.WithRegularEvents.prototype);
+
+    /**
+     * @param {string} name
+     * @param {geom.Rectangle} respawnZone
+     * @param {webgl.Color} teamColor
+     * @constructor
+     */
+    game.logic.Team = function(name, respawnZone, teamColor) {
+        /**
+         * @const
+         * @type {string}
+         */
+        this.name = name;
+        /**
+         * @const
+         * @type {geom.Rectangle}
+         */
+        this.respawnZone = respawnZone;
+        /**
+         * @const
+         * @type {webgl.Color}
+         */
+        this.teamColor = teamColor;
+    };
+
+    game.logic.Team.prototype.type = rtt.registerType(game.logic.Team.prototype, 'game.logic.Team');
+
+    game.logic.Team.prototype.generateSpawnPosition = function() {
+        return this.respawnZone.a.add(new geom.Vector(
+            (this.respawnZone.b.x - this.respawnZone.a.x) * Math.random(),
+            (this.respawnZone.b.y - this.respawnZone.a.y) * Math.random()));
+    };
 
     /**
      * @const {string}
@@ -86,7 +126,6 @@ var G = PIXEL_PER_METER * 9.807;
      * @param {string} id
      */
     game.logic.Map.prototype.removeObject = function (id) {
-        console.log('Deleting id=' + id);
         var object = this._idToObject[id];
         if (util.isDefined(object)) {
             this._objects.splice(this._objects.indexOf(object), 1);

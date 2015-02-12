@@ -21,13 +21,14 @@ goog.require('game.const');
         this._server = server;
         this._canvas = canvas;
         this._scene = new visual.Scene();
-        this._map = new game.logic.Map([]);
         this._mouseInputHandler = new input.InputHandler();
         this._keyboardInputHandler = new input.InputHandler();
 
+        this.map = new game.logic.Map([], []);
         this.playerObject = null;
         this.playerObjectId = null;
         this.lastCameraPosition = new geom.Vector(320, 240);
+        this.playerDeathTime = new Date().getTime();
 
         this.initCanvas();
         this.initCanvasEvents();
@@ -154,6 +155,28 @@ goog.require('game.const');
         keyboardHandler.on(input.E_KEY_DOWN, util.throttle(game.const.bullet.shootDelay, fireHandler));
         keyboardHandler.on(input.E_KEY_UP, fireHandler);
 
+        function update() {
+            var time = new Date().getTime();
+            if (client.playerObjectId == null
+                    && time - client.playerDeathTime >= game.const.player.respawnTime
+                    && !util.isObjectEmpty(client.map.teams)) {
+                var team = util.pickRandom(client.map.teams);
+                var position = team.generateSpawnPosition();
+                var newGameObject = new game.data.PlayerObject(
+                    null,
+                    new phys.MotionBody(position, new phys.Circle(game.const.player.radius),
+                        game.const.player.weight, game.const.player.maxSpeed),
+                    new visual.OrientedCircle(game.const.player.radius, team.teamColor, game.const.player.removedAngle)
+                );
+                newGameObject.setHitPoints(15);
+                client.playerObjectId = newGameObject.id;
+                server.send(new game.message.ObjectsCreationMessage([newGameObject]));
+            }
+        }
+
+        this.map.activate(events.E_UPDATE_STEP);
+        this.map.on(events.E_UPDATE_STEP, update);
+
         mouseHandler.attachTo(canvas);
         keyboardHandler.attachTo(document.body);
     };
@@ -193,7 +216,7 @@ goog.require('game.const');
      */
     function redrawScene() {
         this._scene.drawScene(this.getSceneCenter(), this.getCanvasSize(), this.getSceneSize().x,
-            this._map.getObjectsSnapshot(), unwrapMesh, unwrapPosition, unwrapCourse);
+            this.map.getObjectsSnapshot(), unwrapMesh, unwrapPosition, unwrapCourse);
     }
 
     var handlersHolder = new game.message.MessageHandlersHolder();
@@ -212,7 +235,7 @@ goog.require('game.const');
          * @this {game.client.GameClient}
          */
         function (message) {
-            this._map.applyModificationsBatch(message.batch);
+            this.map.applyModificationsBatch(message.batch);
             redrawScene.call(this);
         }
     );
@@ -223,7 +246,7 @@ goog.require('game.const');
          * @this {game.client.GameClient}
          */
         function (message) {
-            this._map.addObjects(message.objects);
+            this.map.addObjects(message.objects);
             for (var i = 0; i < message.objects.length; i++) {
                 var object = message.objects[i];
                 if (this.playerObjectId !== null && object.id == this.playerObjectId) {
@@ -246,9 +269,19 @@ goog.require('game.const');
                     this.playerObject = null;
                     this.playerObjectId = null;
                 }
-                this._map.removeObject(id);
+                this.map.removeObject(id);
             }
             redrawScene.call(this);
+        }
+    );
+
+    handlersHolder.registerHandler(game.message.TeamsMessage.prototype.type,
+        /**
+         * @param {game.message.TeamsMessage} message
+         * @this {game.client.GameClient}
+         */
+        function (message) {
+            this.map.teams = message.teams;
         }
     );
 })();

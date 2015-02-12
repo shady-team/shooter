@@ -87,17 +87,15 @@ goog.require('util');
     /**
      * @param {string} type
      * @param {*=} data
-     * @protected
      */
-    events.WithRegularEvents.prototype._activate = function (type, data) {
+    events.WithRegularEvents.prototype.activate = function (type, data) {
         this._activeEvents[type] = data;
     };
 
     /**
      * @param {string} type
-     * @protected
      */
-    events.WithRegularEvents.prototype._deactivate = function (type) {
+    events.WithRegularEvents.prototype.deactivate = function (type) {
         delete this._activeEvents[type];
     };
 
@@ -127,4 +125,8 @@ goog.require('util');
      * @const {string}
      */
     events.E_ERROR = 'error';
+    /**
+     * @const {string}
+     */
+    events.E_UPDATE_STEP = 'updateState';
 })();
