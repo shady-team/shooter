@@ -94,15 +94,6 @@ goog.require('game.const');
                     new phys.Body(position, new phys.Circle(30), 1),
                     new visual.Circle(30, webgl.BLUE_COLOR)
                 );
-            } else {
-                newGameObject = new game.data.PlayerObject(
-                    null,
-                    new phys.MotionBody(position, new phys.Circle(game.const.player.radius),
-                        game.const.player.weight, game.const.player.maxSpeed),
-                    new visual.OrientedCircle(game.const.player.radius, webgl.RED_COLOR, game.const.player.removedAngle)
-                );
-                newGameObject.setHitPoints(5);
-                client.playerObjectId = newGameObject.id;
             }
             server.send(new game.message.ObjectsCreationMessage([newGameObject]));
         });
@@ -166,7 +157,8 @@ goog.require('game.const');
                     null,
                     new phys.MotionBody(position, new phys.Circle(game.const.player.radius),
                         game.const.player.weight, game.const.player.maxSpeed),
-                    new visual.OrientedCircle(game.const.player.radius, team.teamColor, game.const.player.removedAngle)
+                    new visual.OrientedCircle(game.const.player.radius, team.teamColor, game.const.player.removedAngle),
+                    team.name
                 );
                 newGameObject.setHitPoints(15);
                 client.playerObjectId = newGameObject.id;

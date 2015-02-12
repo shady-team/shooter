@@ -102,11 +102,17 @@ game.data.ModificationsBatch;
      * @param {?string} id
      * @param {phys.MotionBody.<?>} body
      * @param {visual.TrianglesMesh} mesh
+     * @param {string} teamName
      * @constructor
      * @extends {game.data.GameObject}
      */
-    game.data.PlayerObject = function (id, body, mesh) {
+    game.data.PlayerObject = function (id, body, mesh, teamName) {
         game.data.GameObject.call(this, id, body, mesh);
+        /**
+         * @const
+         * @type {string}
+         */
+        this.teamName = teamName;
     };
 
     rtt.extend(game.data.PlayerObject, game.data.GameObject, 'game.data.PlayerObject');
