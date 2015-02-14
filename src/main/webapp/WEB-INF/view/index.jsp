@@ -2,7 +2,7 @@
 <html>
     <head>
         <title>Index</title>
-        <script src="https://apprtc.appspot.com/js/adapter.js"></script>
+        <script src="https://rawgit.com/webrtc/adapter/master/adapter.js"></script>
         <link rel="stylesheet" type="text/css" href="/css/main.css"/>
     </head>
     <body>
