@@ -24,6 +24,14 @@ goog.require('webgl');
      * @const {number} - in ms
      */
     game.const.player.respawnTime = 500;
+    /**
+     * @const {number} - in degrees
+     */
+    game.const.player.viewAngle = 120;
+    /**
+     * @const {number}
+     */
+    game.const.player.viewRange = 300;
 
 
     game.const.bullet = {};

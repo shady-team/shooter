@@ -207,8 +207,41 @@ goog.require('game.const');
      * @this {game.client.GameClient}
      */
     function redrawScene() {
+        var frustums = [];
+        var lightPositions = [];
+        var lightRanges = [];
+        var objects = this.map.getObjectsSnapshot();
+        var teamName = this.playerObject.teamName;
+        for (var i = 0; i < objects.length; i++) {
+            /**
+             * @type {game.data.GameObject}
+             */
+            var object = objects[i];
+            if (this.playerObject != null && object.type == game.data.PlayerObject.prototype.type) {
+                /**
+                 * @type {game.data.PlayerObject}
+                 */
+                var player = object;  // TODO: how to fix cast warning?
+                if (teamName == player.teamName) {
+                    frustums.push(matrix.Matrix3.frustumDirected(player.body.position,
+                        player.course, game.const.player.viewAngle, game.const.player.radius / 8, game.const.player.viewRange));
+                    lightPositions.push(player.body.position);
+                    lightRanges.push(game.const.player.viewRange);
+                }
+            }
+        }
+        /**
+         * @param {game.data.GameObject} object
+         * @return {boolean}
+         */
+        function isObstacleChecker(object) {
+            if (object.type == game.data.PlayerObject.prototype.type) {
+                return teamName == object.teamName;
+            }
+            return object.mesh.colors[0 * 4 + 3] < 1.0;
+        }
         this._scene.drawScene(this.getSceneCenter(), this.getCanvasSize(), this.getSceneSize().x,
-            this.map.getObjectsSnapshot(), unwrapMesh, unwrapPosition, unwrapCourse);
+            objects, unwrapMesh, isObstacleChecker, unwrapPosition, unwrapCourse, frustums, lightPositions, lightRanges);
     }
 
     var handlersHolder = new game.message.MessageHandlersHolder();

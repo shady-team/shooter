@@ -20,10 +20,10 @@ goog.require('game.logic');
         this._clients = [];
 
         var glass = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 360),
-            new phys.Rectangle(20, 200), Infinity), new visual.Rectangle(20, 200, webgl.LIGHT_BLUE_COLOR));
-        glass.setHitPoints(1);
+            new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.GLASS_COLOR));
+        glass.setHitPoints(2);
         var woodenBlock = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 120),
-            new phys.Rectangle(20, 200), Infinity), new visual.Rectangle(20, 200, webgl.LIGHT_BROWN_COLOR));
+            new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.LIGHT_BROWN_COLOR));
         woodenBlock.setHitPoints(5);
         /**
          * @type {game.logic.Map}
@@ -208,7 +208,13 @@ goog.require('game.logic');
         sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
     }
 
+    /**
+     * @param {Array.<string>} batch
+     */
     function sendDeletionsUpdate(batch) {
+        for (var i = 0; i < batch.length; i++) {
+            this._map.removeObject(batch[i]);//TODO: REVIEW THIS FIRSTLY! I think that the good solution is to remove object, when event is recieved by server from server (but is does not now, may be because of temporary WebRTC problems)
+        }
         sendAll.call(this, new game.message.ObjectsDeletionsMessage(batch));
     }
 

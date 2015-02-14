@@ -23,14 +23,20 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @param {number} sceneWidth
      * @param {Array.<T>} wrappers
      * @param {function(T):visual.TrianglesMesh} unwrapper
+     * @param {function(T):boolean} isObstacleChecker
      * @param {function(T):geom.Vector} positionExtractor
      * @param {function(T):number} angleExtractor
+     * @param {Array.<matrix.Matrix3>} lightsFrustums
+     * @param {Array.<geom.Vector>} lightPositions
+     * @param {Array.<number>} lightRanges
      */
     visual.Scene.prototype.drawScene = function (sceneCenter, canvasSize, sceneWidth,
-                                                 wrappers, unwrapper, positionExtractor, angleExtractor) {
+                                                 wrappers, unwrapper, isObstacleChecker, positionExtractor, angleExtractor,
+                                                 lightsFrustums, lightPositions, lightRanges) {
         var positionsArrays = [],
             indicesArrays = [],
             colorsArrays = [],
+            isObstacleMask = [],
             pointsCount = 0,
             indicesCount = 0;
         wrappers.forEach(function (wrapper) {
@@ -43,6 +49,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             positionsArrays.push(positions);
             indicesArrays.push(indices);
             colorsArrays.push(colors);
+            isObstacleMask.push(isObstacleChecker(wrapper));
             pointsCount += positions.length / 2;
             indicesCount += indices.length;
         }, this);
@@ -51,7 +58,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             allColors = new Float32Array(pointsCount * 4),
             pointOffset = 0,
             indicesOffset = 0;
-        for (var i = 0; i < colorsArrays.length; i++) {
+        for (var i = 0; i < positionsArrays.length; i++) {
             var positions = positionsArrays[i];
             var indices = indicesArrays[i];
             var colors = colorsArrays[i];
@@ -67,7 +74,34 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             pointOffset += positions.length / 2;
             indicesOffset += indices.length;
         }
-        webgl.drawTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors);
+        if (lightsFrustums.length == 0) {
+            webgl.drawTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors);
+        } else {
+            pointOffset = 0;
+            for (i = 0; i < positionsArrays.length; i++) {
+                positions = positionsArrays[i];
+                var isObstacle = isObstacleMask[i];
+                for (j = 0; j < positions.length; j++) {
+                    if (isObstacle) {
+                        allPositions[pointOffset * 2 + j] = 0;
+                    }
+                }
+                pointOffset += positions.length / 2;
+            }
+            webgl.renderShadows(allPositions, allIndices, lightsFrustums);
+
+            pointOffset = 0;
+            for (i = 0; i < positionsArrays.length; i++) {
+                positions = positionsArrays[i];
+                isObstacle = isObstacleMask[i];
+                for (j = 0; j < positions.length; j++) {
+                    allPositions[pointOffset * 2 + j] = positions[j];
+                }
+                pointOffset += positions.length / 2;
+            }
+            webgl.drawShadowedTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors,
+                lightsFrustums, lightPositions, lightRanges);
+        }
     };
 
 

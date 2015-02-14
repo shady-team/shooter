@@ -26,6 +26,35 @@ goog.require('geom');
     };
 
     /**
+    * @return {matrix.Matrix3}
+    */
+    matrix.Matrix3.frustum = function (left, right, near, far) {
+        return new matrix.Matrix3(
+            2 * far / (right - left), (right + left) / (left - right), 0,
+            0, (near + far) / (far - near), 2 * far * near / (near - far),
+            0, 1, 0);
+    };
+
+    /**
+     * @param {geom.Vector} position
+     * @param {number} course in degrees
+     * @param {number} angleOfView in degrees
+     * @param {number} near
+     * @param {number} far
+     * @return {matrix.Matrix3}
+     */
+    matrix.Matrix3.frustumDirected = function (position, course, angleOfView, near, far) {
+        angleOfView = angleOfView * Math.PI / 180;
+        var right = Math.tan(angleOfView / 2) * far;
+        var left = -right;
+
+        var rotation = matrix.Matrix3.rotation(-(course-90));
+        var translation = matrix.Matrix3.translation(-position.x, -position.y);
+        var res = matrix.Matrix3.frustum(left, right, near, far).dot(rotation);
+        return res.dot(translation);
+    };
+
+    /**
      * @static
      * @const {matrix.Matrix3}
      */
@@ -58,6 +87,20 @@ goog.require('geom');
         return new matrix.Matrix3(
             1, 0, dx,
             0, 1, dy,
+            0, 0, 1);
+    };
+
+    /**
+     * @param {geom.Rectangle} rectSrc
+     * @param {geom.Rectangle} rectDst
+     * @return {matrix.Matrix3}
+     */
+    matrix.Matrix3.rectToRect = function (rectSrc, rectDst) {
+        var scaleX = (rectDst.b.x - rectDst.a.x) / (rectSrc.b.x - rectSrc.a.x);
+        var scaleY = (rectDst.b.y - rectDst.a.y) / (rectSrc.b.y - rectSrc.a.y);
+        return new matrix.Matrix3(
+            scaleX, 0, rectDst.a.x - rectSrc.a.x * scaleX,
+            0, scaleY, rectDst.a.y - rectSrc.a.y * scaleY,
             0, 0, 1);
     };
 

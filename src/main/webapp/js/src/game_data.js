@@ -94,7 +94,7 @@ game.data.ModificationsBatch;
      * @param {game.data.GameObject} target
      */
     game.data.Bullet.prototype.collideWith = function (target) {
-        target.hit();
+        target.hit();//TODO: fix double hit-bug
         this.hit();
     };
 
