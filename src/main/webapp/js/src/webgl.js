@@ -32,23 +32,23 @@ var WEB_GL_DEBUG = false;
         '' +
         'uniform mat3 iFrustum;' +
         '' +
-        'varying vec4 v_color;' +
+        'varying vec4 vColor;' +
         '' +
         'void main()' +
         '{' +
         '    vec3 cameraPosition = iFrustum * vec3(position, 1.0);' +
         '    gl_Position = vec4(cameraPosition.xy/cameraPosition.z, 0.0, 1.0);' +
-        '    v_color = color;' +
+        '    vColor = color;' +
         '}';
 
     var _coloredPolygonFShader = '' +
         'precision mediump float;' +
         '' +
-        'varying vec4 v_color;' +
+        'varying vec4 vColor;' +
         '' +
         'void main()' +
         '{' +
-        '    gl_FragColor = v_color;' +
+        '    gl_FragColor = vColor;' +
         '}';
 
     var _shadowCasterVShader = '' +
@@ -59,25 +59,25 @@ var WEB_GL_DEBUG = false;
         'attribute vec2 position;' +
         'attribute float lightIndexF;' +
         '' +
-        'varying float v_depth;' +
-        'varying float z_depth;' +
+        'varying float vDepth;' +
+        'varying float zDepth;' +
         '' +
         'void main()' +
         '{' +
-        '    vec3 camera_position = iFrustums[int(lightIndexF+0.5)] * vec3(position, 1.0);' +
-        '    float x = camera_position.x;' +
-        '    float y = camera_position.y;' +
-        '    float z = camera_position.z;' +
-        '    v_depth = y;' +
-        '    z_depth = z;' +
+        '    vec3 cameraPosition = iFrustums[int(lightIndexF+0.5)] * vec3(position, 1.0);' +
+        '    float x = cameraPosition.x;' +
+        '    float y = cameraPosition.y;' +
+        '    float z = cameraPosition.z;' +
+        '    vDepth = y;' +
+        '    zDepth = z;' +
         '    gl_Position = vec4(x, z * (-1.0 + (1.0 + 2.0*lightIndexF)/float(LIGHTS_MAX)), y, z);' +
         '}';
 
     var _shadowCasterFShader = '' +
         'precision mediump float;' +
         '' +
-        'varying float v_depth;' +
-        'varying float z_depth;' +
+        'varying float vDepth;' +
+        'varying float zDepth;' +
         '' +
         'vec4 pack(float depth){' +
         '    const vec4 bitSh = vec4(256 * 256 * 256,' +
@@ -95,7 +95,7 @@ var WEB_GL_DEBUG = false;
         '' +
         'void main()' +
         '{' +
-        '    gl_FragColor = pack(v_depth/z_depth);' +
+        '    gl_FragColor = pack(vDepth/zDepth);' +
         '}';
 
     var _shadowedPolygonVShader = '' +
@@ -164,47 +164,47 @@ var WEB_GL_DEBUG = false;
         '}';
 
     function _initColoredPolygonProgram() {
-        webgl.coloredPolygonProgram = webgl.build_program(_coloredPolygonVShader, _coloredPolygonFShader);
-        var gl_program = webgl.coloredPolygonProgram;
+        webgl.coloredPolygonProgram = webgl.buildProgram(_coloredPolygonVShader, _coloredPolygonFShader);
+        var glProgram = webgl.coloredPolygonProgram;
 
-        gl.useProgram(gl_program);
-        gl_program.positionAttrib = gl.getAttribLocation(gl_program, 'position');
-        gl_program.colorAttrib = gl.getAttribLocation(gl_program, 'color');
+        gl.useProgram(glProgram);
+        glProgram.positionAttrib = gl.getAttribLocation(glProgram, 'position');
+        glProgram.colorAttrib = gl.getAttribLocation(glProgram, 'color');
 
-        gl_program.frustumUniform = gl.getUniformLocation(gl_program, 'iFrustum');
+        glProgram.frustumUniform = gl.getUniformLocation(glProgram, 'iFrustum');
         gl.useProgram(null);
 
-        gl_program.indexBuf = new webgl.VertexBufferObject(gl.ELEMENT_ARRAY_BUFFER);
-        gl_program.positionBuf = new webgl.VertexBufferObject();
-        gl_program.colorBuf = new webgl.VertexBufferObject();
+        glProgram.indexBuf = new webgl.VertexBufferObject(gl.ELEMENT_ARRAY_BUFFER);
+        glProgram.positionBuf = new webgl.VertexBufferObject();
+        glProgram.colorBuf = new webgl.VertexBufferObject();
     }
 
     function _initShadowCasterProgram() {
-        webgl.shadowCasterProgram = webgl.build_program(_shadowCasterVShader.split("LIGHTS_MAX").join(webgl.LIGHTS_MAX.toString()),
+        webgl.shadowCasterProgram = webgl.buildProgram(_shadowCasterVShader.split("LIGHTS_MAX").join(webgl.LIGHTS_MAX.toString()),
                                                         _shadowCasterFShader.split("LIGHTS_MAX").join(webgl.LIGHTS_MAX.toString()));
-        var gl_program = webgl.shadowCasterProgram;
+        var glProgram = webgl.shadowCasterProgram;
 
-        gl.useProgram(gl_program);
-        gl_program.positionAttrib = gl.getAttribLocation(gl_program, 'position');
-        gl_program.lightIndexAttrib = gl.getAttribLocation(gl_program, 'lightIndexF');
+        gl.useProgram(glProgram);
+        glProgram.positionAttrib = gl.getAttribLocation(glProgram, 'position');
+        glProgram.lightIndexAttrib = gl.getAttribLocation(glProgram, 'lightIndexF');
 
-        gl_program.frustumUniforms = [];
+        glProgram.frustumUniforms = [];
         for (var i = 0; i < webgl.LIGHTS_MAX; i++) {
-            gl_program.frustumUniforms.push(gl.getUniformLocation(gl_program,
+            glProgram.frustumUniforms.push(gl.getUniformLocation(glProgram,
                 "iFrustums[LAYER_INDEX]".replace('LAYER_INDEX', i.toString())));
         }
         gl.useProgram(null);
 
-        gl_program.indexBuf = new webgl.VertexBufferObject(gl.ELEMENT_ARRAY_BUFFER);
-        gl_program.positionBuf = new webgl.VertexBufferObject();
-        gl_program.lightIndexBuf = new webgl.VertexBufferObject();
+        glProgram.indexBuf = new webgl.VertexBufferObject(gl.ELEMENT_ARRAY_BUFFER);
+        glProgram.positionBuf = new webgl.VertexBufferObject();
+        glProgram.lightIndexBuf = new webgl.VertexBufferObject();
 
 
         // Initiating 'Render-To-Texture' for shadows
         webgl.shadowCasterProgram.shadowFramebuffer = new webgl.Framebuffer();
         webgl.shadowCasterProgram.depthTex = new webgl.Texture(gl.TEXTURE_2D);
         webgl.shadowCasterProgram.depthTex.bind();
-        webgl.shadowCasterProgram.depthTex.set_params(webgl.CLAMP_TO_EDGE_TEXTURE.concat(webgl.NEAREST_TEXTURE));
+        webgl.shadowCasterProgram.depthTex.setParams(webgl.CLAMP_TO_EDGE_TEXTURE.concat(webgl.NEAREST_TEXTURE));
         gl.texImage2D(webgl.shadowCasterProgram.depthTex.target, 0, gl.RGBA, webgl.SHADOW_RESOLUTION, webgl.LIGHTS_MAX, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         webgl.shadowCasterProgram.depthTex.unbind();
 
@@ -217,43 +217,43 @@ var WEB_GL_DEBUG = false;
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderBuffer);
         webgl.shadowCasterProgram.shadowFramebuffer.unbind();
 
-        gl.useProgram(gl_program);
-        gl.uniform1i(gl_program.uniform_depthTextures, webgl.shadowCasterProgram.depthTex.slot);
+        gl.useProgram(glProgram);
+        gl.uniform1i(glProgram.uniform_depthTextures, webgl.shadowCasterProgram.depthTex.slot);
         gl.useProgram(null);
     }
 
     function _initShadowedPolygonProgram() {
-        webgl.shadowedPolygonProgram = webgl.build_program(_shadowedPolygonVShader.split("LIGHTS_MAX").join(webgl.LIGHTS_MAX.toString()),
+        webgl.shadowedPolygonProgram = webgl.buildProgram(_shadowedPolygonVShader.split("LIGHTS_MAX").join(webgl.LIGHTS_MAX.toString()),
                                                            _shadowedPolygonFShader.split("LIGHTS_MAX").join(webgl.LIGHTS_MAX.toString()));
         webgl.shadowedPolygonProgram.depthTex = webgl.shadowCasterProgram.depthTex;
-        var gl_program = webgl.shadowedPolygonProgram;
+        var glProgram = webgl.shadowedPolygonProgram;
 
-        gl.useProgram(gl_program);
-        gl_program.positionAttrib = gl.getAttribLocation(gl_program, "position");
-        gl_program.colorAttrib = gl.getAttribLocation(gl_program, "color");
+        gl.useProgram(glProgram);
+        glProgram.positionAttrib = gl.getAttribLocation(glProgram, "position");
+        glProgram.colorAttrib = gl.getAttribLocation(glProgram, "color");
 
-        gl_program.frustumUniform = gl.getUniformLocation(gl_program, "iFrustum");
-        gl_program.depthTexturesUniform = gl.getUniformLocation(gl_program, "depthTextures");
-        gl_program.lightsCountUniform = gl.getUniformLocation(gl_program, "lightsCount");
+        glProgram.frustumUniform = gl.getUniformLocation(glProgram, "iFrustum");
+        glProgram.depthTexturesUniform = gl.getUniformLocation(glProgram, "depthTextures");
+        glProgram.lightsCountUniform = gl.getUniformLocation(glProgram, "lightsCount");
 
-        gl.uniform1i(gl_program.depthTexturesUniform, gl_program.depthTex.slot);
+        gl.uniform1i(glProgram.depthTexturesUniform, glProgram.depthTex.slot);
 
-        gl_program.worldToLightDepthUniform = [];
-        gl_program.lightPosUniform = [];
-        gl_program.lightRangeUniform = [];
+        glProgram.worldToLightDepthUniform = [];
+        glProgram.lightPosUniform = [];
+        glProgram.lightRangeUniform = [];
         for (var i = 0; i < webgl.LIGHTS_MAX; i++) {
-            gl_program.worldToLightDepthUniform.push(gl.getUniformLocation(gl_program,
+            glProgram.worldToLightDepthUniform.push(gl.getUniformLocation(glProgram,
                 "worldToLightDepthTex[LAYER_INDEX]".replace('LAYER_INDEX', i.toString())));
-            gl_program.lightPosUniform.push(gl.getUniformLocation(gl_program,
+            glProgram.lightPosUniform.push(gl.getUniformLocation(glProgram,
                 "lightPos[LAYER_INDEX]".replace('LAYER_INDEX', i.toString())));
-            gl_program.lightRangeUniform.push(gl.getUniformLocation(gl_program,
+            glProgram.lightRangeUniform.push(gl.getUniformLocation(glProgram,
                 "lightRange[LAYER_INDEX]".replace('LAYER_INDEX', i.toString())));
         }
         gl.useProgram(null);
 
-        gl_program.indexBuf = new webgl.VertexBufferObject(gl.ELEMENT_ARRAY_BUFFER);
-        gl_program.positionBuf = new webgl.VertexBufferObject();
-        gl_program.colorBuf = new webgl.VertexBufferObject();
+        glProgram.indexBuf = new webgl.VertexBufferObject(gl.ELEMENT_ARRAY_BUFFER);
+        glProgram.positionBuf = new webgl.VertexBufferObject();
+        glProgram.colorBuf = new webgl.VertexBufferObject();
     }
 
     function _initPrograms() {
@@ -290,9 +290,9 @@ var WEB_GL_DEBUG = false;
         return false;
     };
 
-    function _build_shader(shader_code, shader_type) {
-        var shader = gl.createShader(shader_type);
-        gl.shaderSource(shader, shader_code);
+    function _buildShader(shaderCode, shaderType) {
+        var shader = gl.createShader(shaderType);
+        gl.shaderSource(shader, shaderCode);
         gl.compileShader(shader);
 
         var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
@@ -308,41 +308,41 @@ var WEB_GL_DEBUG = false;
     }
 
     /**
-     * @param {string} vertex_code
-     * @param {string} fragment_code
+     * @param {string} vertexCode
+     * @param {string} fragmentCode
      */
-    webgl.build_program = function (vertex_code, fragment_code) {
-        var gl_program = gl.createProgram();
+    webgl.buildProgram = function (vertexCode, fragmentCode) {
+        var glProgram = gl.createProgram();
 
-        var vertex = _build_shader(vertex_code, gl.VERTEX_SHADER);
+        var vertex = _buildShader(vertexCode, gl.VERTEX_SHADER);
         if (!vertex) {
             return null;
         }
-        gl.attachShader(gl_program, vertex);
+        gl.attachShader(glProgram, vertex);
 
-        if (fragment_code != null) {
-            var fragment = _build_shader(fragment_code, gl.FRAGMENT_SHADER);
+        if (fragmentCode != null) {
+            var fragment = _buildShader(fragmentCode, gl.FRAGMENT_SHADER);
             if (!fragment) {
                 return null;
             }
-            gl.attachShader(gl_program, fragment);
+            gl.attachShader(glProgram, fragment);
         }
 
-        gl.linkProgram(gl_program);
+        gl.linkProgram(glProgram);
 
-        var success = gl.getProgramParameter(gl_program, gl.LINK_STATUS);
+        var success = gl.getProgramParameter(glProgram, gl.LINK_STATUS);
         if (!success) {
-            var error_log = gl.getProgramInfoLog(gl_program);
-            console.log("Error in program linking: " + error_log);
-            alert("Error in program linking: " + error_log);
+            var errorLog = gl.getProgramInfoLog(glProgram);
+            console.log("Error in program linking: " + errorLog);
+            alert("Error in program linking: " + errorLog);
             return null;
         }
 
-        gl.detachShader(gl_program, vertex);
-        if (fragment_code != null) {
-            gl.detachShader(gl_program, fragment);
+        gl.detachShader(glProgram, vertex);
+        if (fragmentCode != null) {
+            gl.detachShader(glProgram, fragment);
         }
-        return gl_program;
+        return glProgram;
     };
 
     /**
@@ -378,15 +378,15 @@ var WEB_GL_DEBUG = false;
     };
 
 
-    var _next_texture_slot = 1;
+    var _nextTextureSlot = 1;
 
     /**
      * @constructor
      */
     webgl.Texture = function (target) {
         this.target = target;
-        this.slot = _next_texture_slot;
-        _next_texture_slot += 1;
+        this.slot = _nextTextureSlot;
+        _nextTextureSlot += 1;
         this.handle = gl.createTexture();
         this.bind();
         gl.bindTexture(this.target, this.handle);
@@ -401,7 +401,7 @@ var WEB_GL_DEBUG = false;
         gl.activeTexture(gl.TEXTURE0);
     };
 
-    webgl.Texture.prototype.set_params = function (params) {
+    webgl.Texture.prototype.setParams = function (params) {
         for (var i = 0; i < params.length; i++) {
             var key = params[i][0];
             var value = params[i][1];

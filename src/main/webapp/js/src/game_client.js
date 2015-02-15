@@ -236,9 +236,10 @@ goog.require('game.const');
          */
         function isObstacleChecker(object) {
             if (object.type == game.data.PlayerObject.prototype.type) {
-                return teamName == object.teamName;
+                return teamName != object.teamName;
+            } else {
+                return object.isObstacle;
             }
-            return object.mesh.colors[0 * 4 + 3] < 1.0;
         }
         this._scene.drawScene(this.getSceneCenter(), this.getCanvasSize(), this.getSceneSize().x,
             objects, unwrapMesh, isObstacleChecker, unwrapPosition, unwrapCourse, frustums, lightPositions, lightRanges);

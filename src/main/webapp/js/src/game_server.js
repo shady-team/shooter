@@ -22,6 +22,7 @@ goog.require('game.logic');
         var glass = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 360),
             new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.GLASS_COLOR));
         glass.setHitPoints(2);
+        glass.setIsObstacle(false);
         var woodenBlock = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 120),
             new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.LIGHT_BROWN_COLOR));
         woodenBlock.setHitPoints(5);
@@ -199,7 +200,7 @@ goog.require('game.logic');
         function (message, id) {
             for (var i = 0; i < message.ids.length; i++) {
                 this._map.removeObject(message.ids[i]);
-            }//TODO: fix bug with deleting objects - bullets became invisible, but they are still material in physical calculations
+            }
             sendAll.call(this, message);
         }
     );

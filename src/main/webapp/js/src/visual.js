@@ -82,7 +82,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
                 positions = positionsArrays[i];
                 var isObstacle = isObstacleMask[i];
                 for (j = 0; j < positions.length; j++) {
-                    if (isObstacle) {
+                    if (!isObstacle) {
                         allPositions[pointOffset * 2 + j] = 0;
                     }
                 }

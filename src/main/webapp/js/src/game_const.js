@@ -54,7 +54,11 @@ goog.require('webgl');
     /**
      * @const {number}
      */
-    game.const.bullet.spreadAngle = 5;
+    game.const.bullet.minSpreadAngle = 0.5;
+    /**
+     * @const {number}
+     */
+    game.const.bullet.maxSpreadAngle = 10;
     /**
      * @const {number} in ms
      */

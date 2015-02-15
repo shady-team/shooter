@@ -23,6 +23,10 @@ game.data.ModificationsBatch;
         this.body = body;
         this.mesh = mesh;
         this.course = 0;
+        /**
+         * @type {boolean}
+         */
+        this.isObstacle = true;
         this.hitPoints = Infinity;
     };
 
@@ -33,6 +37,13 @@ game.data.ModificationsBatch;
      */
     game.data.GameObject.prototype.setCourse = function (course) {
         this.course = course;//TODO: migrate to phys.Body. But for now it is only needed for PlayerObject rendering (circle)
+    };
+
+    /**
+     * @param isObstacle
+     */
+    game.data.GameObject.prototype.setIsObstacle = function(isObstacle) {
+        this.isObstacle = isObstacle;
     };
 
     /**
@@ -154,7 +165,9 @@ game.data.ModificationsBatch;
             new visual.Circle(game.const.bullet.radius, game.const.bullet.color)
         );
         bullet.setHitPoints(1);
-        var bulletCourse = this.course + util.randomNormalDistribution() * game.const.bullet.spreadAngle / 2.0;
+        var spreadAngle = game.const.bullet.minSpreadAngle
+            + (this.body.speed.length() / game.const.player.maxSpeed) * (game.const.bullet.maxSpreadAngle - game.const.bullet.minSpreadAngle);
+        var bulletCourse = this.course + util.randomNormalDistribution() * spreadAngle / 2.0;
         bullet.body.speed = geom.Vector.createPolarVector(bulletCourse, game.const.bullet.speed);
         bullet.body.internalForce = this.getCourseVector().multiply(game.const.bullet.speed * game.const.bullet.weight);
         return bullet;
