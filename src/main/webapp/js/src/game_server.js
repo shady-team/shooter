@@ -166,7 +166,7 @@ goog.require('game.logic');
                 return client !== id;
             }))
         );
-        sendTo.call(this, id, new game.message.TeamsMessage(this._map.teams));
+        sendTo.call(this, id, new game.message.TeamsMessage(this._map.getTeamsSnapshot()));
         sendTo.call(this, id, new game.message.ObjectsCreationMessage(this._map.getObjectsSnapshot()));
     }
 

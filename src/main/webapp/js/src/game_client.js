@@ -148,10 +148,10 @@ goog.require('game.const');
 
         function update() {
             var time = new Date().getTime();
+            var team = client.map.chooseTeam();
             if (client.playerObjectId == null
                     && time - client.playerDeathTime >= game.const.player.respawnTime
-                    && !util.isObjectEmpty(client.map.teams)) {
-                var team = util.pickRandom(client.map.teams);
+                    && team != null) {
                 var position = team.generateSpawnPosition();
                 var newGameObject = new game.data.PlayerObject(
                     null,
@@ -211,22 +211,25 @@ goog.require('game.const');
         var lightPositions = [];
         var lightRanges = [];
         var objects = this.map.getObjectsSnapshot();
-        var teamName = this.playerObject.teamName;
-        for (var i = 0; i < objects.length; i++) {
-            /**
-             * @type {game.data.GameObject}
-             */
-            var object = objects[i];
-            if (this.playerObject != null && object.type == game.data.PlayerObject.prototype.type) {
+        var teamName = null;
+        if (this.playerObject != null) {
+            teamName = this.playerObject.teamName;
+            for (var i = 0; i < objects.length; i++) {
                 /**
-                 * @type {game.data.PlayerObject}
+                 * @type {game.data.GameObject}
                  */
-                var player = object;  // TODO: how to fix cast warning?
-                if (teamName == player.teamName) {
-                    frustums.push(matrix.Matrix3.frustumDirected(player.body.position,
-                        player.course, game.const.player.viewAngle, game.const.player.radius / 8, game.const.player.viewRange));
-                    lightPositions.push(player.body.position);
-                    lightRanges.push(game.const.player.viewRange);
+                var object = objects[i];
+                if (this.playerObject != null && object.type == game.data.PlayerObject.prototype.type) {
+                    /**
+                     * @type {game.data.PlayerObject}
+                     */
+                    var player = object;  // TODO: how to fix cast warning?
+                    if (teamName == player.teamName) {
+                        frustums.push(matrix.Matrix3.frustumDirected(player.body.position,
+                            player.course, game.const.player.viewAngle, game.const.player.radius / 8, game.const.player.viewRange));
+                        lightPositions.push(player.body.position);
+                        lightRanges.push(game.const.player.viewRange);
+                    }
                 }
             }
         }
@@ -307,7 +310,7 @@ goog.require('game.const');
          * @this {game.client.GameClient}
          */
         function (message) {
-            this.map.teams = message.teams;
+            this.map.setTeams(message.teams);
         }
     );
 })();

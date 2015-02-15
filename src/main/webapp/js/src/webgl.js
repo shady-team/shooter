@@ -527,16 +527,14 @@ var WEB_GL_DEBUG = false;
             }
             for (j = 0; 3 * j < indices.length; j++) {
                 for (var k = 0; k < 3; k++) {
-                    allIndices[i * indices.length * 2 + 2 * 3 * j + k * 2 + 0] = indices[3 * j + k];
-                    allIndices[i * indices.length * 2 + 2 * 3 * j + k * 2 + 1] = indices[3 * j + ((k + 1) % 3)];
+                    allIndices[i * indices.length * 2 + 2 * 3 * j + k * 2 + 0] = i * positions.length + indices[3 * j + k];
+                    allIndices[i * indices.length * 2 + 2 * 3 * j + k * 2 + 1] = i * positions.length + indices[3 * j + ((k + 1) % 3)];
                 }
             }
             for (j = 0; j < indices.length; j++) {
                 lightIndicies[i * indices.length + j] = i;
             }
         }
-        util.assert((util.maxInArray(allIndices) + 1) * 2 == allPositions.length);
-        util.assert(util.minInArray(allIndices) == 0);
 
         var glProgram = webgl.shadowCasterProgram;
 

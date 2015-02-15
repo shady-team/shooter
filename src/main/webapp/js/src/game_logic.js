@@ -20,13 +20,6 @@ var G = PIXEL_PER_METER * 9.807;
     game.logic.Map = function (teams, objects) {
         events.WithRegularEvents.call(this);
         /**
-         * @type {Object.<string, game.logic.Team>}
-         */
-        this.teams = util.emptyObject();
-        for (var i = 0; i < teams.length; i++) {
-            this.teams[teams[i].name] = teams[i];
-        }
-        /**
          * @type {Array.<game.data.GameObject>}
          * @private
          */
@@ -36,6 +29,16 @@ var G = PIXEL_PER_METER * 9.807;
          * @private
          */
         this._idToObject = util.emptyObject();
+        /**
+         * @type {Array.<game.logic.Team>}
+         * @private
+         */
+        this._teams = teams;
+        /**
+         * @type {Object.<string,game.logic.Team>}
+         * @private
+         */
+        this._teamnameToTeam = util.emptyObject();
         /**
          * @type {?number}
          * @private
@@ -52,6 +55,7 @@ var G = PIXEL_PER_METER * 9.807;
          */
         this._world = new phys.World(G, 0.5);
         objects.forEach(putToMap, this);
+        teams.forEach(putTeamToMap, this);
     };
 
     game.logic.Map.prototype = Object.create(events.WithRegularEvents.prototype);
@@ -104,6 +108,14 @@ var G = PIXEL_PER_METER * 9.807;
      */
     function putToMap(object) {
         this._idToObject[object.id] = object;
+    }
+
+    /**
+     * @this {game.logic.Map}
+     * @param {game.logic.Team} team
+     */
+    function putTeamToMap(team) {
+        this._teamnameToTeam[team.name] = team;
     }
 
     /**
@@ -211,6 +223,59 @@ var G = PIXEL_PER_METER * 9.807;
      */
     game.logic.Map.prototype.getObjectsSnapshot = function () {
         return this._objects.slice();
+    };
+
+    /**
+     * @return {Array.<game.logic.Team>}
+     */
+    game.logic.Map.prototype.getTeamsSnapshot = function () {
+        return this._teams.slice();
+    };
+
+    /**
+     * @param {Array.<game.logic.Team>} teams
+     */
+    game.logic.Map.prototype.setTeams = function (teams) {
+        this._teams = teams;
+        this._teamnameToTeam = util.emptyObject();
+        teams.forEach(putTeamToMap, this);
+    };
+
+    /**
+     * @return {game.logic.Team} team
+     */
+    game.logic.Map.prototype.chooseTeam = function () {
+        var smallestTeam = null;
+        var smallestTeamSize = Infinity;
+        var map = this;
+        this._teams.forEach(function (team) {
+            var size = map.getTeamSize(team);
+            if (size <= smallestTeamSize) {
+                smallestTeam = team;
+                smallestTeamSize = size;
+            }
+        });
+        return smallestTeam;
+    };
+
+    /**
+     * @param {game.logic.Team} team
+     * @return {number}
+     */
+    game.logic.Map.prototype.getTeamSize= function (team) {
+        var size = 0;
+        this._objects.forEach(function (object) {
+            if (object.type == game.data.PlayerObject.prototype.type) {
+                /**
+                 * @type {game.data.PlayerObject}
+                 */
+                var player = object;// TODO: how to fix cast warning?
+                if (player.teamName == team.name) {
+                    size += 1;
+                }
+            }
+        });
+        return size;
     };
 
     /**

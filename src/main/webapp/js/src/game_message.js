@@ -100,7 +100,7 @@ goog.require('game.data');
         = rtt.registerType(game.message.ObjectsDeletionsMessage.prototype, "game.message.ObjectsDeletionsMessage");
 
     /**
-     * @param {Object.<string, game.logic.Team>} teams
+     * @param {Array.<game.logic.Team>} teams
      * @constructor
      * @implements {game.message.Message}
      */
