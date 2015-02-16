@@ -75,7 +75,8 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             indicesOffset += indices.length;
         }
         if (lightsFrustums.length == 0) {
-            webgl.drawTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors);
+            webgl.drawShadowedTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors,
+                lightsFrustums, lightPositions, lightRanges, 1.0);
         } else {
             pointOffset = 0;
             for (i = 0; i < positionsArrays.length; i++) {
@@ -100,7 +101,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
                 pointOffset += positions.length / 2;
             }
             webgl.drawShadowedTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors,
-                lightsFrustums, lightPositions, lightRanges);
+                lightsFrustums, lightPositions, lightRanges, 0.5);
         }
     };
 

@@ -18,36 +18,127 @@ goog.require('game.logic');
          * @private
          */
         this._clients = [];
-
-        var glass = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 360),
-            new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.GLASS_COLOR));
-        glass.setHitPoints(2);
-        glass.setIsObstacle(false);
-        var woodenBlock = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 120),
-            new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.LIGHT_BROWN_COLOR));
-        woodenBlock.setHitPoints(5);
         /**
          * @type {game.logic.Map}
          * @private
          */
         this._map = new game.logic.Map([
-            new game.logic.Team('GreenTeam', new geom.Rectangle(new geom.Vector(100, 100), new geom.Vector(120, 120)), webgl.GREEN_COLOR),
-            new game.logic.Team('BlueTeam', new geom.Rectangle(new geom.Vector(540, 300), new geom.Vector(560, 320)), webgl.BLUE_COLOR)
-            ], [
-            new game.data.GameObject(null, new phys.Body(new geom.Vector(10, 240),
-                new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
-            new game.data.GameObject(null, new phys.Body(new geom.Vector(630, 240),
-                new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
-            new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 10),
-                new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
-            new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 470),
-                new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
-            glass,
-            woodenBlock
-        ]);
+            new game.logic.Team('GreenTeam', 90, new geom.Rectangle(new geom.Vector(-1200, -300), new geom.Vector(1000, -100)), webgl.GREEN_COLOR),
+            new game.logic.Team('BlueTeam', 90, new geom.Rectangle(new geom.Vector(1000, -300), new geom.Vector(1200, -100)), webgl.BLUE_COLOR)
+        ], constructMap());
         initServerEvents.call(this);
         initGameLogic.call(this);
     };
+
+    function constructMap() {
+        var a = 100;
+        var columnsCols = 6;
+        var topLeftCorner = new geom.Vector(-(columnsCols - 0.5) * a - a * 0.5 - a * 3, -3.5 * a - 0.5 * a - 5 * a);
+        var topRightCorner = new geom.Vector(-topLeftCorner.x, -3.5 * a - 0.5 * a - 5 * a);
+
+        function rectangle(x0, y0, x1, y1) {
+            return new game.data.GameObject(null, new phys.Body(new geom.Vector((x0 + x1) / 2, (y0 + y1) / 2),
+                new phys.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0)), Infinity), new visual.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0), webgl.BLACK_COLOR));
+        }
+
+        function constructMainWalls() {
+            var walls = [];
+            // Two top walls
+            walls.push(rectangle(topLeftCorner.x, topLeftCorner.y, -0.5 * a, topLeftCorner.y - a));
+            walls.push(rectangle(0.5 * a, topLeftCorner.y - a, topRightCorner.x, topRightCorner.y));
+            // Left and right upper walls
+            var leftUpStart = new geom.Vector(topLeftCorner.x, -0.5 * a);
+            var rightUpStart = new geom.Vector(topRightCorner.x, -0.5 * a);
+            walls.push(rectangle(topLeftCorner.x - a, topLeftCorner.y - a, leftUpStart.x, leftUpStart.y));
+            walls.push(rectangle(topRightCorner.x + a, topRightCorner.y - a, rightUpStart.x, rightUpStart.y));
+            // Left and right lower walls
+            var leftDownStart = new geom.Vector(topLeftCorner.x, 0.5 * a);
+            var rightDownStart = new geom.Vector(topRightCorner.x, 0.5 * a);
+            var downLeftCorner = new geom.Vector(topLeftCorner.x, 12 * a);
+            var downRightCorner = new geom.Vector(topRightCorner.x, downLeftCorner.y);
+            walls.push(rectangle(leftDownStart.x, leftDownStart.y, downLeftCorner.x - 4 * a, downLeftCorner.y + a));
+            walls.push(rectangle(rightDownStart.x, rightDownStart.y, downRightCorner.x + 4 * a, downRightCorner.y + a));
+            // Down wall
+            walls.push(rectangle(downLeftCorner.x, downLeftCorner.y, downRightCorner.x, downRightCorner.y + a));
+            // Green base left and upper walls
+            walls.push(rectangle(leftDownStart.x - 3 * a, leftDownStart.y, leftDownStart.x - 4 * a, leftDownStart.y - 5 * a));
+            walls.push(rectangle(leftDownStart.x - a, leftDownStart.y - 4 * a, leftDownStart.x - 4 * a, leftDownStart.y - 5 * a));
+            // Blue base right and upper walls
+            walls.push(rectangle(rightDownStart.x + 3 * a, rightDownStart.y, rightDownStart.x + 4 * a, rightDownStart.y - 5 * a));
+            walls.push(rectangle(rightDownStart.x + a, rightDownStart.y - 4 * a, rightDownStart.x + 4 * a, rightDownStart.y - 5 * a));
+            // Left, right, up wall of upper hide-out
+            walls.push(rectangle(-2 * a, topLeftCorner.y - a, -3 * a, topLeftCorner.y - 3 * a));
+            walls.push(rectangle(2 * a, topLeftCorner.y - a, 3 * a, topLeftCorner.y - 3 * a));
+            walls.push(rectangle(-2 * a, topLeftCorner.y - 2 * a, 2 * a, topLeftCorner.y - 3 * a));
+
+            // Intrinsic walls
+            // Down wall
+            walls.push(rectangle(downLeftCorner.x + a, downLeftCorner.y - a, downRightCorner.x - a, downRightCorner.y - 1.5 * a));
+            // Four down vertical mini-walls-corners
+            var downY = downLeftCorner.y - 1.5 * a;
+            var upY = downY - 2 * a;
+            var leftX = leftDownStart.x + 2.5 * a;
+            walls.push(rectangle(leftX, downY, leftX + 0.5 * a, upY));
+            walls.push(rectangle(-leftX, downY, -leftX - 0.5 * a, upY));
+            walls.push(rectangle(leftX + 2.5 * a, downY, leftX + 3.0 * a, upY));
+            walls.push(rectangle(-leftX - 2.5 * a, downY, -leftX - 3.0 * a, upY));
+            // Next four down vertical mini-walls-corners
+            downY = upY - a;
+            upY = downY - 2 * a;
+            walls.push(rectangle(leftX, downY, leftX + 0.5 * a, upY));
+            walls.push(rectangle(-leftX, downY, -leftX - 0.5 * a, upY));
+            walls.push(rectangle(leftX + 2.5 * a, downY, leftX + 3.0 * a, upY));
+            walls.push(rectangle(-leftX - 2.5 * a, downY, -leftX - 3.0 * a, upY));
+            // Two down horizontal walls separators
+            walls.push(rectangle(leftDownStart.x + 1.5 * a, upY, -a, upY - 0.5 * a));
+            walls.push(rectangle(rightDownStart.x - 1.5 * a, upY, +a, upY - 0.5 * a));
+            // Left and right vertical big walls (down part)
+            walls.push(rectangle(leftX + 1.0 * a, upY - 0.5 * a, leftX + 1.5 * a, 0.5 * a));
+            walls.push(rectangle(-leftX - 1.0 * a, upY - 0.5 * a, -leftX - 1.5 * a, 0.5 * a));
+            // Left and right vertical big walls (up part)
+            walls.push(rectangle(topLeftCorner.x + 2.0 * a, topLeftCorner.y + 4 * a, topLeftCorner.x + 2.5 * a, 0.5 * a));
+            walls.push(rectangle(topRightCorner.x - 2.0 * a, topLeftCorner.y + 4 * a, topRightCorner.x - 2.5 * a, 0.5 * a));
+            // Upper left and right two walls
+            walls.push(rectangle(topLeftCorner.x + 2.0 * a, topLeftCorner.y, topLeftCorner.x + 2.5 * a, topLeftCorner.y + 3 * a));
+            walls.push(rectangle(topRightCorner.x - 2.0 * a, topLeftCorner.y, topRightCorner.x - 2.5 * a, topLeftCorner.y + 3 * a));
+            // Two main upper horizontal walls
+            walls.push(rectangle(leftDownStart.x + 1.0 * a, -3.5 * a, -0.5 * a, -4.0 * a));
+            walls.push(rectangle(rightDownStart.x - 1.0 * a, -3.5 * a, 0.5 * a, -4.0 * a));
+
+            return walls;
+        }
+
+        function constructColumns() {
+            var columns = [];
+            for (var i = 0; i < columnsCols; i++) {
+                var x = (-columnsCols + 0.5) * a + i * 2 * a;
+                columns.push(rectangle(x, topLeftCorner.y + a, x + a, topLeftCorner.y + 2 * a));
+                columns.push(rectangle(x, topLeftCorner.y + 3 * a, x + a, topLeftCorner.y + 4 * a));
+            }
+            return columns;
+        }
+
+        return constructMainWalls().concat(constructColumns());
+        //var glass = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 360),
+        //    new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.GLASS_COLOR));
+        //glass.setHitPoints(2);
+        //glass.setIsObstacle(false);
+        //var woodenBlock = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 120),
+        //    new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.LIGHT_BROWN_COLOR));
+        //woodenBlock.setHitPoints(5);
+        //[
+        //    new game.data.GameObject(null, new phys.Body(new geom.Vector(10, 240),
+        //        new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
+        //    new game.data.GameObject(null, new phys.Body(new geom.Vector(630, 240),
+        //        new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
+        //    new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 10),
+        //        new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
+        //    new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 470),
+        //        new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
+        //    glass,
+        //    woodenBlock
+        //]
+    }
 
     /**
      * @this {game.server.GameServer}

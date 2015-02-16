@@ -62,16 +62,22 @@ var G = PIXEL_PER_METER * 9.807;
 
     /**
      * @param {string} name
+     * @param {number} initialCourse in degrees
      * @param {geom.Rectangle} respawnZone
      * @param {webgl.Color} teamColor
      * @constructor
      */
-    game.logic.Team = function(name, respawnZone, teamColor) {
+    game.logic.Team = function(name, initialCourse, respawnZone, teamColor) {
         /**
          * @const
          * @type {string}
          */
         this.name = name;
+        /**
+         * @const
+         * @type {number}
+         */
+        this.initialCourse = initialCourse;
         /**
          * @const
          * @type {geom.Rectangle}

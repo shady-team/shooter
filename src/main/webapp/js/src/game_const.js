@@ -15,7 +15,7 @@ goog.require('webgl');
     /**
      * @const {number}
      */
-    game.const.player.maxSpeed = 200;
+    game.const.player.maxSpeed = 300;
     /**
      * @const {number}
      */
@@ -23,7 +23,7 @@ goog.require('webgl');
     /**
      * @const {number} - in ms
      */
-    game.const.player.respawnTime = 500;
+    game.const.player.respawnTime = 1500;
     /**
      * @const {number} - in degrees
      */
@@ -31,7 +31,7 @@ goog.require('webgl');
     /**
      * @const {number}
      */
-    game.const.player.viewRange = 300;
+    game.const.player.viewRange = 500 + 239;
 
 
     game.const.bullet = {};
@@ -46,7 +46,7 @@ goog.require('webgl');
     /**
      * @const {number}
      */
-    game.const.bullet.speed = 300;
+    game.const.bullet.speed = game.const.player.maxSpeed * 2.0;
     /**
      * @const {webgl.Color}
      */

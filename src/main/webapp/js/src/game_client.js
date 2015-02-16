@@ -30,7 +30,7 @@ goog.require('game.const');
          */
         this.playerObject = null;
         this.playerObjectId = null;
-        this.lastCameraPosition = new geom.Vector(320, 240);
+        this.lastCameraPosition = new geom.Vector(0, 0);
         this.playerDeathTime = new Date().getTime();
 
         this.initCanvas();
@@ -67,7 +67,7 @@ goog.require('game.const');
      * @return {geom.Vector}
      */
     game.client.GameClient.prototype.getSceneSize = function() {
-        var sceneWidth = 640;
+        var sceneWidth = 2500;
         return new geom.Vector(sceneWidth, this._canvas.height * sceneWidth / this._canvas.width)
     };
 
@@ -82,16 +82,12 @@ goog.require('game.const');
             if (button !== input.Button.RIGHT)
                 return;
 
-            var sceneCenter = client.getSceneCenter();
-            var canvasCenter = client.getCanvasSize().multiply(0.5);
-            var translate = matrix.Matrix3.translation(-canvasCenter.x, -canvasCenter.y);
-            var scale = matrix.Matrix3.scaling(client.getSceneSize().x / client.getCanvasSize().x, client.getSceneSize().y / client.getCanvasSize().y);
-            var translateToScene = matrix.Matrix3.translation(sceneCenter.x, sceneCenter.y);
-            var canvasToWorld = translateToScene.dot(scale.dot(translate));
+            var canvasToWorld = matrix.Matrix3.rectToRect(new geom.Rectangle(client.getCanvasSize().multiply(0.5), client.getCanvasSize()),
+                new geom.Rectangle(client.getSceneCenter(), client.getSceneCenter().add(client.getSceneSize().multiply(0.5))));
 
             var position = canvasToWorld.translate(new geom.Vector(x, y)),
                 newGameObject;
-            if (button === input.Button.LEFT) {
+            if (button === input.Button.RIGHT) {
                 newGameObject = new game.data.GameObject(
                     null,
                     new phys.Body(position, new phys.Circle(30), 1),
@@ -105,12 +101,8 @@ goog.require('game.const');
             if (client.playerObject === null)
                 return;
 
-            var sceneCenter = client.getSceneCenter();
-            var canvasCenter = client.getCanvasSize().multiply(0.5);
-            var translate = matrix.Matrix3.translation(-canvasCenter.x, -canvasCenter.y);
-            var scale = matrix.Matrix3.scaling(client.getSceneSize().x / client.getCanvasSize().x, client.getSceneSize().y / client.getCanvasSize().y);
-            var translateToScene = matrix.Matrix3.translation(sceneCenter.x, sceneCenter.y);
-            var canvasToWorld = translateToScene.dot(scale.dot(translate));
+            var canvasToWorld = matrix.Matrix3.rectToRect(new geom.Rectangle(client.getCanvasSize().multiply(0.5), client.getCanvasSize()),
+                new geom.Rectangle(client.getSceneCenter(), client.getSceneCenter().add(client.getSceneSize().multiply(0.5))));
             var mouseInWorld = canvasToWorld.translate(new geom.Vector(x, y));
             var sight = mouseInWorld.subtract(client.playerObject.body.position);
 
@@ -183,6 +175,7 @@ goog.require('game.const');
                     new visual.OrientedCircle(game.const.player.radius, team.teamColor, game.const.player.removedAngle),
                     team.name
                 );
+                newGameObject.setCourse(team.initialCourse);
                 newGameObject.setHitPoints(15);
                 client.playerObjectId = newGameObject.id;
                 server.send(new game.message.ObjectsCreationMessage([newGameObject]));
