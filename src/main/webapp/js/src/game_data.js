@@ -80,11 +80,11 @@ game.data.ModificationsBatch;
         if (util.isDefined(modification.newSpeed)) {
             this.body.speed = modification.newSpeed;
         }
-        if (util.isDefined(modification.addToCourse)) {
-            this.course += modification.addToCourse;
+        if (util.isDefined(modification.newCourse)) {
+            this.course = modification.newCourse;
         }
-        if (util.isDefined(modification.deltaHitPoints)) {
-            this.hitPoints += modification.deltaHitPoints;
+        if (util.isDefined(modification.newHitPoints)) {
+            this.hitPoints = modification.newHitPoints;
         }
     };
 
@@ -187,7 +187,7 @@ game.data.ModificationsBatch;
     /**
      * @type {?number}
      */
-    game.data.GameObjectModification.prototype.deltaHitPoints;
+    game.data.GameObjectModification.prototype.newHitPoints;
 
     /**
      * @type {?geom.Vector}
@@ -207,7 +207,7 @@ game.data.ModificationsBatch;
     /**
      * @type {?number}
      */
-    game.data.GameObjectModification.prototype.addToCourse;
+    game.data.GameObjectModification.prototype.newCourse;
 
     /**
      * @constructor
@@ -230,11 +230,11 @@ game.data.ModificationsBatch;
     };
 
     /**
-     * @param {number} deltaHitPoints
+     * @param {number} hitPoints
      * @return {game.data.ModificationBuilder} this
      */
-    game.data.ModificationBuilder.prototype.setDeltaHitPoints = function (deltaHitPoints) {
-        this._modification.deltaHitPoints = deltaHitPoints;
+    game.data.ModificationBuilder.prototype.setHitPoints = function (hitPoints) {
+        this._modification.newHitPoints = hitPoints;
         return this;
     };
 
@@ -257,11 +257,11 @@ game.data.ModificationsBatch;
     };
 
     /**
-     * @param {number} delta
+     * @param {number} course
      * @return {game.data.ModificationBuilder} this
      */
-    game.data.ModificationBuilder.prototype.setAddToCourse = function (delta) {
-        this._modification.addToCourse = delta;
+    game.data.ModificationBuilder.prototype.setCourse = function (course) {
+        this._modification.newCourse = course;
         return this;
     };
 

@@ -25,6 +25,9 @@ goog.require('game.const');
         this._keyboardInputHandler = new input.InputHandler();
 
         this.map = new game.logic.Map([], []);
+        /**
+         * @type {?game.data.PlayerObject}
+         */
         this.playerObject = null;
         this.playerObjectId = null;
         this.lastCameraPosition = new geom.Vector(320, 240);
@@ -76,7 +79,7 @@ goog.require('game.const');
 
         var client = this;
         mouseHandler.on(input.E_MOUSE_UP, function (x, y, button) {
-            if (button !== input.Button.LEFT && button !== input.Button.RIGHT)
+            if (button !== input.Button.RIGHT)
                 return;
 
             var sceneCenter = client.getSceneCenter();
@@ -98,6 +101,30 @@ goog.require('game.const');
             server.send(new game.message.ObjectsCreationMessage([newGameObject]));
         });
 
+        mouseHandler.on(input.E_MOUSE_MOVE, function (x, y) {
+            if (client.playerObject === null)
+                return;
+
+            var sceneCenter = client.getSceneCenter();
+            var canvasCenter = client.getCanvasSize().multiply(0.5);
+            var translate = matrix.Matrix3.translation(-canvasCenter.x, -canvasCenter.y);
+            var scale = matrix.Matrix3.scaling(client.getSceneSize().x / client.getCanvasSize().x, client.getSceneSize().y / client.getCanvasSize().y);
+            var translateToScene = matrix.Matrix3.translation(sceneCenter.x, sceneCenter.y);
+            var canvasToWorld = translateToScene.dot(scale.dot(translate));
+            var mouseInWorld = canvasToWorld.translate(new geom.Vector(x, y));
+            var sight = mouseInWorld.subtract(client.playerObject.body.position);
+
+            var modification = game.data.buildModification()
+                .setCourse(sight.angle())
+                .build();
+
+            server.send(new game.message.ObjectsModificationsMessage(
+                game.data.buildModificationsBatch()
+                    .add(client.playerObjectId, modification)
+                    .build()
+            ))
+        });
+
         function moveHandler() {
             if (client.playerObject === null)
                 return;
@@ -106,8 +133,6 @@ goog.require('game.const');
             var force = geom.Vector.ZERO,
                 right = matrix.Matrix3.rotation(90).translate(client.playerObject.getCourseVector().multiply(forcePower)),
                 down = client.playerObject.getCourseVector().multiply(-forcePower);
-            var addToCourse = 0,
-                rotatingAngle = 10;
 
             if (keyboardHandler.isKeyDown(input.Key.W))
                 force = force.subtract(down);
@@ -119,15 +144,14 @@ goog.require('game.const');
             if (keyboardHandler.isKeyDown(input.Key.D))
                 force = force.add(right);
 
-            if (keyboardHandler.isKeyDown(input.Key.J))
-                addToCourse -= rotatingAngle;
-            if (keyboardHandler.isKeyDown(input.Key.L))
-                addToCourse += rotatingAngle;
-
-            var modification = game.data.buildModification().setInternalForce(force).setAddToCourse(addToCourse);
+            var modification = game.data.buildModification()
+                .setInternalForce(force)
+                .build();
 
             server.send(new game.message.ObjectsModificationsMessage(
-                game.data.buildModificationsBatch().add(client.playerObject.id, modification.build()).build()
+                game.data.buildModificationsBatch()
+                    .add(client.playerObject.id, modification)
+                    .build()
             ));
         }
 
@@ -135,16 +159,15 @@ goog.require('game.const');
             if (client.playerObject === null)
                 return;
 
-            if (keyboardHandler.isKeyDown(input.Key.K)) {
+            if (mouseHandler.isButtonDown(input.Button.LEFT)) {
                 var bullet = client.playerObject.createBullet();
                 server.send(new game.message.ObjectsCreationMessage([bullet]));
             }
         }
 
-        keyboardHandler.on(input.E_KEY_DOWN, moveHandler);
+        keyboardHandler.on(input.E_KEY_IS_DOWN, moveHandler);
         keyboardHandler.on(input.E_KEY_UP, moveHandler);
-        keyboardHandler.on(input.E_KEY_DOWN, util.throttle(game.const.bullet.shootDelay, fireHandler));
-        keyboardHandler.on(input.E_KEY_UP, fireHandler);
+        keyboardHandler.on(input.E_MOUSE_IS_DOWN, util.throttle(game.const.bullet.shootDelay, fireHandler));
 
         function update() {
             var time = new Date().getTime();

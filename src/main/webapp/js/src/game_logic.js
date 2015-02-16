@@ -193,13 +193,13 @@ var G = PIXEL_PER_METER * 9.807;
                 var id = object.id,
                     oldPosition = oldPositions[id],
                     newPosition = object.body.position;
-                if (!oldPosition.approximatelyEqual(newPosition) || oldHitPoints[id] != object.hitPoints) {
+                if (!oldPosition.approximatelyEqual(newPosition) || oldHitPoints[id] !== object.hitPoints) {
                     var modification = game.data.buildModification();
                     if (!oldPosition.approximatelyEqual(newPosition)) {
                         modification.setPosition(newPosition);
                     }
-                    if (oldHitPoints[id] != object.hitPoints) {
-                        modification.setDeltaHitPoints(object.hitPoints - oldHitPoints[id]);
+                    if (oldHitPoints[id] !== object.hitPoints) {
+                        modification.setHitPoints(object.hitPoints);
                     }
                     batchBuilder.add(id, modification.build());
                 }

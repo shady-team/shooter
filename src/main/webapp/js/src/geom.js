@@ -129,6 +129,14 @@ var EPS = 1e-4;
 
 
     /**
+     * @return {number} in degrees
+     */
+    geom.Vector.prototype.angle = function () {
+        return Math.atan2(this.y, this.x) / Math.PI * 180;
+    };
+
+
+    /**
      * @param {geom.Vector} a
      * @param {geom.Vector} b
      * @constructor

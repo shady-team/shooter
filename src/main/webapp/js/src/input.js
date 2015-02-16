@@ -64,15 +64,17 @@ goog.require('events');
      * @param {MouseEvent} evt
      */
     function updateMouseState(state, evt) {
+        var oldValue = !!(state.buttons & (1 << evt.button));
         updatePosition(state, evt);
         switch (evt.type) {
             case 'mousedown':
                 state.buttons |= 1 << evt.button;
-                break;
+                return !oldValue;
             case 'mouseup':
                 state.buttons &= -1 ^ (1 << evt.button);
-                break;
+                return oldValue;
         }
+        return false;
     }
 
     /**
@@ -80,14 +82,16 @@ goog.require('events');
      * @param {KeyboardEvent} evt
      */
     function updateKeyboardState(state, evt) {
+        var oldValue = state.isKeyDown[evt.keyCode];
         switch (evt.type) {
             case 'keydown':
                 state.isKeyDown[evt.keyCode] = true;
-                break;
+                return !oldValue;
             case 'keyup':
-                state.isKeyDown[evt.keyCode] = false;
-                break;
+                delete state.isKeyDown[evt.keyCode];
+                return oldValue;
         }
+        return false;
     }
 
     /**
@@ -170,8 +174,10 @@ goog.require('events');
      * @param {MouseEvent} evt
      */
     function mouseDownHandler(evt) {
-        updateMouseState(this._mouseState, evt);
-        this.fire(input.E_MOUSE_DOWN, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
+        if (updateMouseState(this._mouseState, evt)) {
+            this.fire(input.E_MOUSE_DOWN, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
+            this.activate(input.E_MOUSE_IS_DOWN);
+        }
     }
 
     /**
@@ -181,6 +187,8 @@ goog.require('events');
     function mouseUpHandler(evt) {
         updateMouseState(this._mouseState, evt);
         this.fire(input.E_MOUSE_UP, this.getAbsoluteX(), this.getAbsoluteY(), evt.button);
+        if (!this._mouseState.buttons)
+            this.deactivate(input.E_MOUSE_IS_DOWN);
     }
 
     /**
@@ -190,7 +198,8 @@ goog.require('events');
     function keyUpHandler(evt) {
         updateKeyboardState(this._keyboardState, evt);
         this.fire(input.E_KEY_UP, evt.keyCode);
-        this.deactivate(input.E_KEY_IS_DOWN);
+        if (util.isObjectEmpty(this._keyboardState.isKeyDown))
+            this.deactivate(input.E_KEY_IS_DOWN);
     }
 
     /**
@@ -198,9 +207,10 @@ goog.require('events');
      * @param {KeyboardEvent} evt
      */
     function keyDownHandler(evt) {
-        updateKeyboardState(this._keyboardState, evt);
-        this.fire(input.E_KEY_DOWN, evt.keyCode);
-        this.activate(input.E_KEY_IS_DOWN);
+        if (updateKeyboardState(this._keyboardState, evt)) {
+            this.fire(input.E_KEY_DOWN, evt.keyCode);
+            this.activate(input.E_KEY_IS_DOWN);
+        }
     }
 
     /**
@@ -282,6 +292,8 @@ goog.require('events');
     input.E_MOUSE_MOVE = 'mouseMove';
     /** @const {string} */
     input.E_MOUSE_UP = 'mouseUp';
+    /** @const {string} */
+    input.E_MOUSE_IS_DOWN = 'mouseIsDown';
     /** @const {string} */
     input.E_KEY_DOWN = 'keyDown';
     /** @const {string} */
