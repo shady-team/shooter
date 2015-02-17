@@ -28,7 +28,7 @@
             </div>
         </div>
         <div class="column column-2">
-            <canvas id="field" width="640" height="480"></canvas>
+            <canvas id="field" width="1000" height="700"></canvas>
         </div>
 
         <% if ("dev".equals(request.getParameter("mod"))) { %>

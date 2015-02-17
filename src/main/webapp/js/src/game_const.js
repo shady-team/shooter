@@ -23,7 +23,7 @@ goog.require('webgl');
     /**
      * @const {number} - in ms
      */
-    game.const.player.respawnTime = 1500;
+    game.const.player.respawnTime = 0;
     /**
      * @const {number} - in degrees
      */
@@ -31,14 +31,14 @@ goog.require('webgl');
     /**
      * @const {number}
      */
-    game.const.player.viewRange = 500 + 239;
+    game.const.player.viewRange = 1239;
 
 
     game.const.bullet = {};
     /**
      * @const {number}
      */
-    game.const.bullet.radius = 2;
+    game.const.bullet.radius = 5;
     /**
      * @const {number}
      */
@@ -50,7 +50,7 @@ goog.require('webgl');
     /**
      * @const {webgl.Color}
      */
-    game.const.bullet.color = webgl.WHITE_COLOR;
+    game.const.bullet.color = webgl.RED_COLOR;
     /**
      * @const {number}
      */

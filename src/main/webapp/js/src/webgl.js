@@ -12,7 +12,7 @@ var WEB_GL_DEBUG = false;
     /** @type {WebGLRenderingContext} */
     var gl = null;
 
-    webgl.LIGHTS_MAX = 16;
+    webgl.LIGHTS_MAX = 64;
     webgl.SHADOW_RESOLUTION = 512;
 
     function _initWebGLValues() {
@@ -433,6 +433,7 @@ var WEB_GL_DEBUG = false;
     webgl.RED_COLOR = new webgl.Color(0.5, 0, 0, 1.0);
     webgl.WHITE_COLOR = new webgl.Color(1.0, 1.0, 1.0, 1.0);
     webgl.GREEN_COLOR = new webgl.Color(0, 0.5, 0, 1.0);
+    webgl.GREEN_BLUE_COLOR = new webgl.Color(0, 0.5, 0.5, 1.0);
     webgl.BLUE_COLOR = new webgl.Color(0, 0, 0.5, 1.0);
     webgl.BLACK_COLOR = new webgl.Color(0, 0, 0, 1.0);
     webgl.LIGHT_BLUE_COLOR = new webgl.Color(0.53, 0.81, 0.94, 1.0);
@@ -634,7 +635,7 @@ var WEB_GL_DEBUG = false;
             for (i = 0; i < colors.length; i++) {
                 newColors[16 + i] = colors[i];
             }
-            var farAway = 1300.0;
+            var farAway = 2600.0;
             newPositions[0] = -farAway;
             newPositions[1] = -farAway;
             newPositions[2] = 0.5;

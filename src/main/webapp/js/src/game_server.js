@@ -35,10 +35,19 @@ goog.require('game.logic');
         var columnsCols = 6;
         var topLeftCorner = new geom.Vector(-(columnsCols - 0.5) * a - a * 0.5 - a * 3, -3.5 * a - 0.5 * a - 5 * a);
         var topRightCorner = new geom.Vector(-topLeftCorner.x, -3.5 * a - 0.5 * a - 5 * a);
+        var downLeftCorner = new geom.Vector(topLeftCorner.x, 12 * a);
+        var downRightCorner = new geom.Vector(topRightCorner.x, downLeftCorner.y);
 
         function rectangle(x0, y0, x1, y1) {
             return new game.data.GameObject(null, new phys.Body(new geom.Vector((x0 + x1) / 2, (y0 + y1) / 2),
                 new phys.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0)), Infinity), new visual.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0), webgl.BLACK_COLOR));
+        }
+
+        function glass(x0, y0, x1, y1) {
+            var glass =  new game.data.GameObject(null, new phys.Body(new geom.Vector((x0 + x1) / 2, (y0 + y1) / 2),
+                new phys.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0)), Infinity), new visual.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0), webgl.GLASS_COLOR));
+            glass.setIsObstacle(false);
+            return glass;
         }
 
         function constructMainWalls() {
@@ -54,8 +63,6 @@ goog.require('game.logic');
             // Left and right lower walls
             var leftDownStart = new geom.Vector(topLeftCorner.x, 0.5 * a);
             var rightDownStart = new geom.Vector(topRightCorner.x, 0.5 * a);
-            var downLeftCorner = new geom.Vector(topLeftCorner.x, 12 * a);
-            var downRightCorner = new geom.Vector(topRightCorner.x, downLeftCorner.y);
             walls.push(rectangle(leftDownStart.x, leftDownStart.y, downLeftCorner.x - 4 * a, downLeftCorner.y + a));
             walls.push(rectangle(rightDownStart.x, rightDownStart.y, downRightCorner.x + 4 * a, downRightCorner.y + a));
             // Down wall
@@ -92,12 +99,23 @@ goog.require('game.logic');
             // Two down horizontal walls separators
             walls.push(rectangle(leftDownStart.x + 1.5 * a, upY, -a, upY - 0.5 * a));
             walls.push(rectangle(rightDownStart.x - 1.5 * a, upY, +a, upY - 0.5 * a));
-            // Left and right vertical big walls (down part)
-            walls.push(rectangle(leftX + 1.0 * a, upY - 0.5 * a, leftX + 1.5 * a, 0.5 * a));
-            walls.push(rectangle(-leftX - 1.0 * a, upY - 0.5 * a, -leftX - 1.5 * a, 0.5 * a));
             // Left and right vertical big walls (up part)
-            walls.push(rectangle(topLeftCorner.x + 2.0 * a, topLeftCorner.y + 4 * a, topLeftCorner.x + 2.5 * a, 0.5 * a));
-            walls.push(rectangle(topRightCorner.x - 2.0 * a, topLeftCorner.y + 4 * a, topRightCorner.x - 2.5 * a, 0.5 * a));
+            leftX = topLeftCorner.x + 2.0 * a;
+            var rightX = topRightCorner.x - 2.5 * a;
+            walls.push(rectangle(leftX, topLeftCorner.y + 4 * a, leftX + 0.5 * a, -1.5 * a));
+            walls.push(rectangle(rightX, topLeftCorner.y + 4 * a, rightX + 0.5 * a, -1.5 * a));
+            // Left and right vertical walls (middle part)
+            walls.push(rectangle(leftX, -0.5 * a,leftX + 0.5 * a, 0.5 * a));
+            walls.push(rectangle(rightX,-0.5 * a, rightX + 0.5 * a, 0.5 * a));
+            // Left and right vertical walls (immortal-glass from MORDAR!)
+            walls.push(glass(leftX, 0.5 * a,leftX + 0.5 * a, 1.5 * a));
+            walls.push(glass(rightX,0.5 * a, rightX + 0.5 * a, 1.5 * a));
+            // Left and right vertical walls (middle part2)
+            walls.push(rectangle(leftX, 1.5 * a,leftX + 0.5 * a,2.5 * a));
+            walls.push(rectangle(rightX,1.5 * a, rightX + 0.5 * a, 2.5 * a));
+            // Left and right vertical big walls (down part)
+            walls.push(rectangle(leftX, upY - 0.5 * a, leftX + 0.5 * a, 3.5 * a));
+            walls.push(rectangle(rightX, upY - 0.5 * a, rightX + 0.5 * a, 3.5 * a));
             // Upper left and right two walls
             walls.push(rectangle(topLeftCorner.x + 2.0 * a, topLeftCorner.y, topLeftCorner.x + 2.5 * a, topLeftCorner.y + 3 * a));
             walls.push(rectangle(topRightCorner.x - 2.0 * a, topLeftCorner.y, topRightCorner.x - 2.5 * a, topLeftCorner.y + 3 * a));
@@ -105,6 +123,15 @@ goog.require('game.logic');
             walls.push(rectangle(leftDownStart.x + 1.0 * a, -3.5 * a, -0.5 * a, -4.0 * a));
             walls.push(rectangle(rightDownStart.x - 1.0 * a, -3.5 * a, 0.5 * a, -4.0 * a));
 
+            // Main arena
+            // Two vertical walls
+            walls.push(rectangle(-0.5 * a, 0, -1.0 * a, 4 * a));
+            walls.push(rectangle(0.5 * a, 0, 1.0 * a, 4 * a));
+            // Four columns
+            walls.push(rectangle(-1.5 * a, 3.5 * a, -2.5 * a, 4.5 * a));
+            walls.push(rectangle(1.5 * a, 3.5 * a, 2.5 * a, 4.5 * a));
+            walls.push(rectangle(-1.5 * a, 0.5 * a, -2.5 * a, -0.5 * a));
+            walls.push(rectangle(1.5 * a, 0.5 * a, 2.5 * a, -0.5 * a));
             return walls;
         }
 
@@ -118,26 +145,57 @@ goog.require('game.logic');
             return columns;
         }
 
-        return constructMainWalls().concat(constructColumns());
-        //var glass = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 360),
-        //    new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.GLASS_COLOR));
-        //glass.setHitPoints(2);
-        //glass.setIsObstacle(false);
-        //var woodenBlock = new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 120),
-        //    new phys.Rectangle(20, 160), Infinity), new visual.Rectangle(20, 160, webgl.LIGHT_BROWN_COLOR));
-        //woodenBlock.setHitPoints(5);
-        //[
-        //    new game.data.GameObject(null, new phys.Body(new geom.Vector(10, 240),
-        //        new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
-        //    new game.data.GameObject(null, new phys.Body(new geom.Vector(630, 240),
-        //        new phys.Rectangle(20, 440), Infinity), new visual.Rectangle(20, 440, webgl.GREEN_COLOR)),
-        //    new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 10),
-        //        new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
-        //    new game.data.GameObject(null, new phys.Body(new geom.Vector(320, 470),
-        //        new phys.Rectangle(600, 20), Infinity), new visual.Rectangle(600, 20, webgl.GREEN_COLOR)),
-        //    glass,
-        //    woodenBlock
-        //]
+        function ball(x, y, r, w) {
+            return new game.data.GameObject(null, new phys.Body(new geom.Vector(x, y),
+                new phys.Circle(r), w), new visual.Circle(r, webgl.BLACK_COLOR));
+        }
+
+        function constructBalls() {
+            var balls = [];
+            var r = 80;
+            for (var i = -1; i <= 1; i++) {
+                for (var j = -1; j <= 1; j++) {
+                    balls.push(ball(i * r * 2.1, 8.0 * a + j * r * 2.1, r, 5));
+                }
+            }
+
+            r = 30;
+            for (i = -5; i <= 5; i++) {
+                balls.push(ball(i * r * 4.1, (10 + Math.random()) * a + j * r * 2.1, r, 2));
+            }
+            return balls;
+        }
+
+        function wall(x0, y0, x1, y1, hitpoints) {
+            var wall = new game.data.GameObject(null, new phys.Body(new geom.Vector((x0 + x1) / 2, (y0 + y1) / 2),
+                new phys.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0)), Infinity), new visual.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0), webgl.LIGHT_BROWN_COLOR));
+            wall.setHitPoints(hitpoints);
+            return wall;
+        }
+
+        function constructWoodenWalls() {
+            var walls = [];
+            // Hidden down path
+            walls.push(wall(downLeftCorner.x, downLeftCorner.y - a, downLeftCorner.x + a, downRightCorner.y - 1.5 * a, 10));
+            walls.push(wall(downRightCorner.x, downRightCorner.y - a, downRightCorner.x - a, downRightCorner.y - 1.5 * a, 10));
+            // Between columns
+            for (var i = 0; i < columnsCols; i++) {
+                for (var j = 0; j < 3; j++) {
+                    // vertical ones
+                    var x = (-columnsCols + 0.5) * a + i * 2 * a;
+                    walls.push(wall(x + 0.25 * a, topLeftCorner.y + 2 * a * j, x + 0.75 * a, topLeftCorner.y + 2 * a * (j + 0.5), 5));
+                }
+
+                for (j = 0; j < 2 && i < columnsCols - 1; j++) {
+                    // horizontal ones
+                    x = (-columnsCols + 1.5) * a + i * 2 * a;
+                    walls.push(wall(x, topLeftCorner.y + 1.25 * a + 2 * a * j, x + a, topLeftCorner.y + 1.75 * a + 2 * a * j, 5));
+                }
+            }
+            return walls;
+        }
+
+        return constructMainWalls().concat(constructColumns()).concat(constructBalls()).concat(constructWoodenWalls());
     }
 
     /**
