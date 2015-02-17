@@ -85,6 +85,22 @@ goog.require('game.data');
         = rtt.registerType(game.message.ObjectsCreationMessage.prototype, "game.message.ObjectsCreationMessage");
 
     /**
+     * @param {string} playerObjectId
+     * @constructor
+     * @implements {game.message.Message}
+     */
+    game.message.FireBulletMessage = function (playerObjectId) {
+        /**
+         * @type {string}
+         * @const
+         */
+        this.playerObjectId = playerObjectId;
+    };
+
+    game.message.FireBulletMessage.prototype.type
+        = rtt.registerType(game.message.FireBulletMessage.prototype, "game.message.FireBulletMessage");
+
+    /**
      * @param {Array.<string>} ids
      * @constructor
      * @implements {game.message.Message}

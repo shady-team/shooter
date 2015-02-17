@@ -354,6 +354,20 @@ goog.require('game.logic');
         }
     );
 
+    handlersHolder.registerHandler(game.message.FireBulletMessage.prototype.type,
+        /**
+         * @param {game.message.FireBulletMessage} message
+         * @param {string} id
+         */
+        function(message, id) {
+            var player = this._map.getObject(message.playerObjectId);
+            var bullet = player.createBullet();
+            bullet.setIsObstacle(false);
+            this._map.addObjects([bullet]);
+            sendAll.call(this, new game.message.ObjectsCreationMessage([bullet]));
+        }
+    );
+
     function sendPhysicsUpdate(batch) {
         sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
     }

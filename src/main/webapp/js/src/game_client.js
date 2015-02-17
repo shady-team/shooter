@@ -171,8 +171,7 @@ goog.require('game.const');
             }
 
             if (mouseHandler.isButtonDown(input.Button.LEFT)) {
-                var bullet = client.playerObject.createBullet();
-                server.send(new game.message.ObjectsCreationMessage([bullet]));
+                server.send(new game.message.FireBulletMessage(client.playerObjectId));
             }
         }
 

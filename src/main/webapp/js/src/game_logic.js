@@ -152,6 +152,14 @@ var G = PIXEL_PER_METER * 9.807;
     };
 
     /**
+     * @param {string} id
+     * @return {game.data.GameObject}
+     */
+    game.logic.Map.prototype.getObject = function (id) {
+        return this._idToObject[id];
+    };
+
+    /**
      * @param {game.data.ModificationsBatch} batch
      */
     game.logic.Map.prototype.applyModificationsBatch = function (batch) {

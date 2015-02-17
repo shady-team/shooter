@@ -22,11 +22,17 @@ game.data.ModificationsBatch;
         this.id = id || util.genUUID();
         this.body = body;
         this.mesh = mesh;
+        /**
+         * @type {number}
+         */
         this.course = 0;
         /**
          * @type {boolean}
          */
         this.isObstacle = true;
+        /**
+         * @type {number}
+         */
         this.hitPoints = Infinity;
     };
 
