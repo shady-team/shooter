@@ -67,6 +67,39 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-maven2-plugin</artifactId>
+                <version>1.4.12</version>
+                <configuration>
+                    <container>
+                        <containerId>jetty9x</containerId>
+                        <type>remote</type>
+                    </container>
+                    <configuration>
+                        <type>runtime</type>
+                        <properties>
+                            <cargo.hostname>cargo.zulyaev.ru</cargo.hostname>
+                            <cargo.servlet.port>80</cargo.servlet.port>
+                            <cargo.remote.username>${zulyaev.cargo.username}</cargo.remote.username>
+                            <cargo.remote.password>${zulyaev.cargo.password}</cargo.remote.password>
+                        </properties>
+                    </configuration>
+                    <deployer>
+                        <type>remote</type>
+                    </deployer>
+                    <deployables>
+                        <deployable>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>${project.artifactId}</artifactId>
+                            <type>war</type>
+                            <properties>
+                                <context>/shooter</context>
+                            </properties>
+                        </deployable>
+                    </deployables>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
