@@ -49,7 +49,7 @@ var DEBUG = true;
      * @param {string=} message
      */
     util.assertDefined = function (value, message) {
-        util.assert(util.isDefined(value), message);
+        util.assert(value != null, message);
     };
 
     /**
@@ -57,7 +57,7 @@ var DEBUG = true;
      * @param {string=} message
      */
     util.assertUndefined = function (value, message) {
-        util.assert(!util.isDefined(value), message);
+        util.assert(value == null, message);
     };
 
     /**
@@ -123,14 +123,6 @@ var DEBUG = true;
      */
     util.isString = function (value) {
         return typeof value === 'string';
-    };
-
-    /**
-     * @param {*} value
-     * @return {boolean}
-     */
-    util.isDefined = function (value) {
-        return value !== void 0 && value !== null;
     };
 
     /**

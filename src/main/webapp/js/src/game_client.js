@@ -8,41 +8,62 @@ goog.require('game.net');
 goog.require('game.message');
 goog.require('game.logic');
 goog.require('game.const');
+goog.require('game.chat');
 
 (function () {
     /**
      * @param {game.net.Server} server
-     * @param {HTMLCanvasElement} canvas
+     * @param {HTMLElement} container
+     * @param {game.chat.Chat} chat
      * @constructor
      */
-    game.client.GameClient = function GameClient(server, canvas) {
-        webgl.setupWebGL(canvas);
-
+    game.client.GameClient = function GameClient(server, container, chat) {
         this._server = server;
-        this._canvas = canvas;
+        this._canvas = initCanvas(container);
+        this._chat = chat;
+
+        webgl.setupWebGL(this._canvas);
+
         this._scene = new visual.Scene();
-        this._mouseInputHandler = new input.InputHandler();
-        this._keyboardInputHandler = new input.InputHandler();
+        this._inputHandler = new input.InputHandler();
 
         this.map = new game.logic.Map([], []);
         /**
          * @type {?game.data.PlayerObject}
          */
         this.playerObject = null;
-        this.playerObjectId = null;
         this.lastCameraPosition = new geom.Vector(0, 0);
         this.playerDeathTime = new Date().getTime();
 
-        this.initCanvas();
-        this.initCanvasEvents();
-        this.initClientEvents();
+        this.initUiEvents();
+        this.initClientNetEvents();
     };
 
-    game.client.GameClient.prototype.initCanvas = function() {
-        var canvas = this._canvas;
-        canvas.width = 1000;
-        canvas.height = 700;
-    };
+    /**
+     * @param {HTMLElement} container
+     * @return {HTMLCanvasElement}
+     */
+    function initCanvas(container) {
+        var canvas = /** @type {HTMLCanvasElement} */ (document.createElement("canvas"));
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.setAttribute("tabindex", "1");
+
+        setInterval(function() {
+            if (canvas.clientWidth !== canvas.width
+                || canvas.clientHeight !== canvas.height) {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+            // TODO[PolarNick]: update opengl viewport
+        }, 20);
+
+        container.innerHTML = "";
+        container.appendChild(canvas);
+        canvas.focus();
+
+        return canvas;
+    }
 
     /**
      * @return {geom.Vector}
@@ -71,14 +92,14 @@ goog.require('game.const');
         return new geom.Vector(sceneWidth, this._canvas.height * sceneWidth / this._canvas.width)
     };
 
-    game.client.GameClient.prototype.initCanvasEvents = function() {
-        var mouseHandler = this._mouseInputHandler,
-            keyboardHandler = this._keyboardInputHandler,
+    game.client.GameClient.prototype.initUiEvents = function() {
+        var inputHandler = this._inputHandler,
+            server = this._server,
+            chat = this._chat,
             canvas = this._canvas,
-            server = this._server;
+            client = this;
 
-        var client = this;
-        mouseHandler.on(input.E_MOUSE_UP, function (x, y, button) {
+        inputHandler.on(input.E_MOUSE_UP, function (x, y, button) {
             if (button !== input.Button.RIGHT)
                 return;
 
@@ -97,7 +118,7 @@ goog.require('game.const');
             server.send(new game.message.ObjectsCreationMessage([newGameObject]));
         });
 
-        mouseHandler.on(input.E_MOUSE_MOVE, function (x, y) {
+        inputHandler.on(input.E_MOUSE_MOVE, function (x, y) {
             if (client.playerObject === null)
                 return;
 
@@ -112,7 +133,7 @@ goog.require('game.const');
 
             server.send(new game.message.ObjectsModificationsMessage(
                 game.data.buildModificationsBatch()
-                    .add(client.playerObjectId, modification)
+                    .add(client.playerObject.id, modification)
                     .build()
             ))
         });
@@ -126,14 +147,14 @@ goog.require('game.const');
                 right = matrix.Matrix3.rotation(90).translate(client.playerObject.getCourseVector().multiply(forcePower)),
                 down = client.playerObject.getCourseVector().multiply(-forcePower);
 
-            if (keyboardHandler.isKeyDown(input.Key.W))
+            if (inputHandler.isKeyDown(input.Key.W))
                 force = force.subtract(down);
-            if (keyboardHandler.isKeyDown(input.Key.S))
+            if (inputHandler.isKeyDown(input.Key.S))
                 force = force.add(down);
 
-            if (keyboardHandler.isKeyDown(input.Key.A))
+            if (inputHandler.isKeyDown(input.Key.A))
                 force = force.subtract(right);
-            if (keyboardHandler.isKeyDown(input.Key.D))
+            if (inputHandler.isKeyDown(input.Key.D))
                 force = force.add(right);
 
             var modification = game.data.buildModification()
@@ -170,20 +191,37 @@ goog.require('game.const');
                 return;
             }
 
-            if (mouseHandler.isButtonDown(input.Button.LEFT)) {
+            if (inputHandler.isButtonDown(input.Button.LEFT)) {
                 server.send(new game.message.FireBulletMessage(client.playerObjectId));
             }
         }
 
-        keyboardHandler.on(input.E_KEY_IS_DOWN, moveHandler);
-        keyboardHandler.on(input.E_KEY_UP, moveHandler);
-        keyboardHandler.on(input.E_MOUSE_IS_DOWN, util.throttle(game.const.bullet.shootDelay, fireHandler));
+        inputHandler.on(input.E_KEY_IS_DOWN, moveHandler);
+        inputHandler.on(input.E_KEY_UP, moveHandler);
+        inputHandler.on(input.E_MOUSE_IS_DOWN, util.throttle(game.const.bullet.shootDelay, fireHandler));
 
-        mouseHandler.attachTo(canvas);
-        keyboardHandler.attachTo(document.body);
+        inputHandler.on(input.E_KEY_DOWN, function (code) {
+            if (code !== input.Key.ENTER)
+                return;
+            chat.focus();
+        });
+
+        chat.on(game.chat.E_MESSAGE_SENT, function (message) {
+            chat.blur();
+            canvas.focus();
+
+            server.send(new game.message.ChatMessage(null, message));
+        });
+
+        chat.on(game.chat.E_MESSAGE_CANCELED, function () {
+            chat.blur();
+            canvas.focus();
+        });
+
+        inputHandler.attachTo(this._canvas);
     };
 
-    game.client.GameClient.prototype.initClientEvents = function() {
+    game.client.GameClient.prototype.initClientNetEvents = function() {
         var server = this._server;
         server.on(events.E_MESSAGE, onMessage.bind(this));
         server.on(events.E_OPEN, util.noop); // ensures that local server receives open message. do not put before registering on E_MESSAGE!
@@ -230,10 +268,7 @@ goog.require('game.const');
                  */
                 var object = objects[i];
                 if (this.playerObject != null && object.type == game.data.PlayerObject.prototype.type) {
-                    /**
-                     * @type {game.data.PlayerObject}
-                     */
-                    var player = object;  // TODO: how to fix cast warning?
+                    var player = /** @type {game.data.PlayerObject} */ (object);
                     if (teamName == player.teamName) {
                         frustums.push(matrix.Matrix3.frustumDirected(player.body.position,
                             player.course, game.const.player.viewAngle, game.const.player.radius / 8, game.const.player.viewRange));
@@ -289,7 +324,7 @@ goog.require('game.const');
             for (var i = 0; i < message.objects.length; i++) {
                 var object = message.objects[i];
                 if (this.playerObjectId !== null && object.id == this.playerObjectId) {
-                    this.playerObject = object;//TODO: re-do this, by saving to map of object new created object BEFORE sending creation message to server, and ignore somehow message from server after that (or server should not send it to the source sender)
+                    this.playerObject = /** @type {game.data.PlayerObject} */ (object);//TODO: re-do this, by saving to map of object new created object BEFORE sending creation message to server, and ignore somehow message from server after that (or server should not send it to the source sender)
                 }
             }
             redrawScene.call(this);
@@ -304,7 +339,7 @@ goog.require('game.const');
         function (message) {
             for (var i = 0; i < message.ids.length; i++) {
                 var id = message.ids[i];
-                if (id == this.playerObjectId) {//TODO: think about implementing this in event (with type=id) driven style
+                if (id === this.playerObjectId) {//TODO: think about implementing this in event (with type=id) driven style
                     this.playerObject = null;
                     this.playerObjectId = null;
                 }
@@ -321,6 +356,16 @@ goog.require('game.const');
          */
         function (message) {
             this.map.setTeams(message.teams);
+        }
+    );
+
+    handlersHolder.registerHandler(game.message.ChatMessage.prototype.type,
+        /**
+         * @param {game.message.ChatMessage} message
+         * @this {game.client.GameClient}
+         */
+        function (message) {
+            this._chat.addMessage(message.author, message.message);
         }
     );
 })();

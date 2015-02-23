@@ -131,6 +131,23 @@ goog.require('game.data');
         = rtt.registerType(game.message.TeamsMessage.prototype, "game.message.TeamsMessage");
 
     /**
+     * @param {?string} author
+     * @param {string} message
+     * @constructor
+     * @implements {game.message.Message}
+     */
+    game.message.ChatMessage = function (author, message) {
+        this.author = author;
+        this.message = message;
+    };
+
+    /**
+     * @const {string}
+     */
+    game.message.ChatMessage.prototype.type
+        = rtt.registerType(game.message.ChatMessage.prototype, "game.message.ChatMessage");
+
+    /**
      * @constructor
      */
     game.message.MessageHandlersHolder = function () {
@@ -156,7 +173,7 @@ goog.require('game.data');
         var args = [].slice.call(arguments, 1),
             handler = this._handlers[message.type];
         args[0] = message;
-        if (util.isDefined(handler)) {
+        if (handler != null) {
             handler.apply(thisArg, args);
         } else {
             util.warn("No handler registered for message", message);

@@ -98,10 +98,11 @@ goog.require('events');
     /**
      * @param {net.Observer} observer
      * @constructor
-     * @extends {events.WithEvents}
+     * @implements {events.WithEvents}
+     * @extends {events.EventBus}
      */
     net.WebRTC = function WebRTC(observer) {
-        events.WithEvents.call(this);
+        events.EventBus.call(this);
         this._observer = observer;
         /**
          * @type {Object.<string, RTCPeerConnection>}
@@ -126,7 +127,7 @@ goog.require('events');
         };
     };
 
-    net.WebRTC.prototype = Object.create(events.WithEvents.prototype);
+    net.WebRTC.prototype = Object.create(events.EventBus.prototype);
 
     /**
      * @param {string} peerId

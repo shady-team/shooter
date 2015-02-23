@@ -80,16 +80,16 @@ game.data.ModificationsBatch;
      * @param {game.data.GameObjectModification} modification
      */
     game.data.GameObject.prototype.applyModification = function (modification) {
-        if (util.isDefined(modification.newPosition)) {
+        if (modification.newPosition != null) {
             this.body.position = modification.newPosition;
         }
-        if (util.isDefined(modification.newSpeed)) {
+        if (modification.newSpeed != null) {
             this.body.speed = modification.newSpeed;
         }
-        if (util.isDefined(modification.newCourse)) {
+        if (modification.newCourse != null) {
             this.course = modification.newCourse;
         }
-        if (util.isDefined(modification.newHitPoints)) {
+        if (modification.newHitPoints != null) {
             this.hitPoints = modification.newHitPoints;
         }
     };
@@ -145,10 +145,10 @@ game.data.ModificationsBatch;
      */
     game.data.PlayerObject.prototype.applyModification = function (modification) {
         game.data.GameObject.prototype.applyModification.call(this, modification);
-        if (util.isDefined(modification.newMaxSpeed)) {
+        if (modification.newMaxSpeed != null) {
             this.body.maxSpeed = /** @type {!number} */ (modification.newMaxSpeed);
         }
-        if (util.isDefined(modification.newInternalForce)) {
+        if (modification.newInternalForce != null) {
             this.body.internalForce = modification.newInternalForce;
         }
     };

@@ -73,7 +73,7 @@ goog.require('util');
             key = compoundKey(types),
             overload = this._overloads[key],
             method = overload || this._defMethod;
-        if (!util.isDefined(method))
+        if (method == null)
             throw new Error("No such method");
         return method.apply(thisObj, values);
     };
@@ -93,7 +93,7 @@ goog.require('util');
         /** @type {string} **/
         var type;
         if (DEBUG) {
-            if (!util.isDefined(name)) {
+            if (name == null) {
                 do {
                     type = (nextAutoType++).toString(36);
                 } while (type in types);
@@ -213,7 +213,7 @@ goog.require('util');
                     for (field in obj)
                         if (obj.hasOwnProperty(field))
                             result[field] = rtt.serialize(obj[field]);
-                    if (util.isDefined(obj.type))
+                    if (obj.type != null)
                         result.type = obj.type;
                     return result;
                 }
@@ -247,7 +247,7 @@ goog.require('util');
                 return obj;
             } else {
                 var result = obj;
-                if (util.isDefined(obj.type)) {
+                if (obj.type != null) {
                     if (obj.type === numberType) {
                         return +obj.value;
                     }

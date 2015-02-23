@@ -362,7 +362,7 @@ var RIGIDNESS = 100;
             for (j = i + 1; j < n; ++j) {
                 var b = unwrapper.call(null, wrappers[j]);
                 var effect = phys.collide(a, b);
-                if (effect != ZERO_COLLISION_EFFECT && util.isDefined(collisionCallback)) {
+                if (effect != ZERO_COLLISION_EFFECT && collisionCallback != null) {
                     collisionCallback(wrappers[i], wrappers[j]);
                     collisionCallback(wrappers[j], wrappers[i]);
                     //TODO: Note, that if step between simulation or speed is big enough - the object can 'jump' over another object

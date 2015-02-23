@@ -368,6 +368,16 @@ goog.require('game.logic');
         }
     );
 
+    handlersHolder.registerHandler(game.message.ChatMessage.prototype.type,
+        /**
+         * @param {game.message.ChatMessage} message
+         * @param {string} id
+         */
+        function (message, id) {
+            sendAll.call(this, new game.message.ChatMessage(id, message.message));
+        }
+    );
+
     function sendPhysicsUpdate(batch) {
         sendAll.call(this, new game.message.ObjectsModificationsMessage(batch));
     }

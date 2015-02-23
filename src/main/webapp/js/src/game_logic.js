@@ -15,10 +15,11 @@ var G = PIXEL_PER_METER * 9.807;
      * @param {Array.<game.logic.Team>} teams
      * @param {Array.<game.data.GameObject>} objects
      * @constructor
-     * @extends {events.WithRegularEvents}
+     * @implements {events.WithEvents}
+     * @extends {events.ContinuousEventBus}
      */
     game.logic.Map = function (teams, objects) {
-        events.WithRegularEvents.call(this);
+        events.ContinuousEventBus.call(this);
         /**
          * @type {Array.<game.data.GameObject>}
          * @private
@@ -58,7 +59,7 @@ var G = PIXEL_PER_METER * 9.807;
         teams.forEach(putTeamToMap, this);
     };
 
-    game.logic.Map.prototype = Object.create(events.WithRegularEvents.prototype);
+    game.logic.Map.prototype = Object.create(events.ContinuousEventBus.prototype);
 
     /**
      * @param {string} name
@@ -145,7 +146,7 @@ var G = PIXEL_PER_METER * 9.807;
      */
     game.logic.Map.prototype.removeObject = function (id) {
         var object = this._idToObject[id];
-        if (util.isDefined(object)) {
+        if (object != null) {
             this._objects.splice(this._objects.indexOf(object), 1);
             removeFromMap.call(this, object);
         }
@@ -167,7 +168,7 @@ var G = PIXEL_PER_METER * 9.807;
         for (id in batch) {
             modification = batch[id];
             target = this._idToObject[id];
-            if (util.isDefined(target)) {
+            if (target != null) {
                 target.applyModification(modification);
             }
         }
@@ -191,7 +192,7 @@ var G = PIXEL_PER_METER * 9.807;
 
     game.logic.Map.prototype.validatePhysics = function () {
         var now = Date.now();
-        if (util.isDefined(this._lastUpdate)) {
+        if (this._lastUpdate != null) {
             var oldPositions = {},
                 oldHitPoints = {},
                 batchBuilder = game.data.buildModificationsBatch(),
@@ -280,10 +281,7 @@ var G = PIXEL_PER_METER * 9.807;
         var size = 0;
         this._objects.forEach(function (object) {
             if (object.type == game.data.PlayerObject.prototype.type) {
-                /**
-                 * @type {game.data.PlayerObject}
-                 */
-                var player = object;// TODO: how to fix cast warning?
+                var player = /** @type {game.data.PlayerObject} */ (object);
                 if (player.teamName == team.name) {
                     size += 1;
                 }

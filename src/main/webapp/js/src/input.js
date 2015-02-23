@@ -105,10 +105,11 @@ goog.require('events');
 
     /**
      * @constructor
-     * @extends {events.WithRegularEvents}
+     * @implements {events.WithEvents}
+     * @extends {events.ContinuousEventBus}
      */
     input.InputHandler = function () {
-        events.WithRegularEvents.call(this);
+        events.ContinuousEventBus.call(this);
         /**
          * @type {?HTMLElement}
          * @private
@@ -131,7 +132,7 @@ goog.require('events');
         this._keyboardState = new input.KeyboardState();
     };
 
-    input.InputHandler.prototype = Object.create(events.WithRegularEvents.prototype);
+    input.InputHandler.prototype = Object.create(events.ContinuousEventBus.prototype);
 
     /**
      * @type {Object.<string,function(?)>}
@@ -310,6 +311,7 @@ goog.require('events');
      */
     input.Key = {
         SPACE: 32,
+        ENTER: 13,
         W: charCode('w'),
         A: charCode('a'),
         S: charCode('s'),

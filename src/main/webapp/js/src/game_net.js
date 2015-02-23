@@ -7,7 +7,7 @@ goog.require('net');
     var ID_SELF = "@self";
 
     /**
-     * @constructor
+     * @interface
      * @extends {events.WithEvents}
      */
     game.net.Server = function Server() {
@@ -19,7 +19,7 @@ goog.require('net');
     };
 
     /**
-     * @constructor
+     * @interface
      * @extends {events.WithEvents}
      */
     game.net.Connector = function Connector() {
@@ -40,16 +40,17 @@ goog.require('net');
      * @param {game.net.Connector} connector
      * @param {string} serverId
      * @constructor
-     * @extends {game.net.Server}
+     * @implements {game.net.Server}
+     * @extends {events.EventBus}
      */
     game.net.RemoteServer = function RemoteServer(connector, serverId) {
-        events.WithEvents.call(this);
+        events.EventBus.call(this);
         this._connector = connector;
         this._server = serverId;
         initRemoteServerEvents.call(this);
     };
 
-    game.net.RemoteServer.prototype = Object.create(events.WithEvents.prototype);
+    game.net.RemoteServer.prototype = Object.create(events.EventBus.prototype);
 
     /**
      * @this {game.net.RemoteServer}
@@ -81,15 +82,16 @@ goog.require('net');
     /**
      * @param {game.net.Connector} connector
      * @constructor
-     * @extends {game.net.Server}
+     * @implements {game.net.Server}
+     * @extends {events.EventBus}
      */
     game.net.LocalServer = function LocalServer(connector) {
-        events.WithEvents.call(this);
+        events.EventBus.call(this);
         this._connector = connector;
         this._opened = false;
     };
 
-    game.net.LocalServer.prototype = Object.create(events.WithEvents.prototype);
+    game.net.LocalServer.prototype = Object.create(events.EventBus.prototype);
 
     /**
      * @param {Object} message
@@ -109,16 +111,17 @@ goog.require('net');
             handler.call(this);
             this._connector.connectLocal(this);
         }
-        events.WithEvents.prototype.on.call(this, type, handler);
+        events.EventBus.prototype.on.call(this, type, handler);
     };
 
     /**
      * @param {net.WebRTC} webRtc
      * @constructor
-     * @extends {game.net.Connector}
+     * @implements {game.net.Connector}
+     * @extends {events.EventBus}
      */
     game.net.WebRTCConnectorAdapter = function WebRTCConnectorAdapter(webRtc) {
-        events.WithEvents.call(this);
+        events.EventBus.call(this);
         this._rtc = webRtc;
         /**
          * @type {game.net.LocalServer}
@@ -128,7 +131,7 @@ goog.require('net');
         initAdapterEvents.call(this);
     };
 
-    game.net.WebRTCConnectorAdapter.prototype = Object.create(events.WithEvents.prototype);
+    game.net.WebRTCConnectorAdapter.prototype = Object.create(events.EventBus.prototype);
 
     /**
      * @this {game.net.WebRTCConnectorAdapter}
