@@ -156,6 +156,7 @@ div.chat {
     width: 600px;
     left: 50%;
     margin-left: -300px;
+    pointer-events: none;
 }
 
 div.chat--messagesWrapper {

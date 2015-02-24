@@ -54,8 +54,9 @@ goog.require('game.chat');
                 || canvas.clientHeight !== canvas.height) {
                 canvas.width = canvas.clientWidth;
                 canvas.height = canvas.clientHeight;
+                webgl.height = canvas.height;
+                webgl.width = canvas.width;
             }
-            // TODO[PolarNick]: update opengl viewport
         }, 20);
 
         container.innerHTML = "";
