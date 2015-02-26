@@ -139,6 +139,7 @@ goog.require('game.chat');
             ))
         });
 
+        var previousForce = geom.Vector.ZERO;
         function moveHandler() {
             if (client.playerObject === null)
                 return;
@@ -157,6 +158,10 @@ goog.require('game.chat');
                 force = force.subtract(right);
             if (inputHandler.isKeyDown(input.Key.D))
                 force = force.add(right);
+
+            if (previousForce.approximatelyEqual(force))
+                return;
+            previousForce = force;
 
             var modification = game.data.buildModification()
                 .setInternalForce(force)

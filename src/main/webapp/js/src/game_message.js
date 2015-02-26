@@ -175,6 +175,7 @@ goog.require('game.data');
         args[0] = message;
         if (handler != null) {
             handler.apply(thisArg, args);
+            util.info("Message came", message);
         } else {
             util.warn("No handler registered for message", message);
         }

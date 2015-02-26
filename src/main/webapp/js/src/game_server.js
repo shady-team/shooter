@@ -316,7 +316,11 @@ goog.require('game.logic');
             }))
         );
         sendTo.call(this, id, new game.message.TeamsMessage(this._map.getTeamsSnapshot()));
-        sendTo.call(this, id, new game.message.ObjectsCreationMessage(this._map.getObjectsSnapshot()));
+        var objectsSnapshot = this._map.getObjectsSnapshot();
+        while (objectsSnapshot.length != 0) {
+            var part = objectsSnapshot.splice(0, 20);
+            sendTo.call(this, id, new game.message.ObjectsCreationMessage(part));
+        }
     }
 
     handlersHolder.registerHandler(game.message.ObjectsModificationsMessage.prototype.type,
