@@ -288,15 +288,36 @@ goog.require('game.chat');
          * @param {game.data.GameObject} object
          * @return {boolean}
          */
-        function isObstacleChecker(object) {
+        function isTransparentChecker(object) {
             if (object.type == game.data.PlayerObject.prototype.type) {
-                return teamName != object.teamName;
+                return teamName == object.teamName;
             } else {
-                return object.isObstacle;
+                return object.isTransparent;
             }
         }
+
+        /**
+         * @param {game.data.GameObject} object
+         * @return {boolean}
+         */
+        function isAlwaysVisibleChecker(object) {
+            return object.isAlwaysVisible;
+        }
+        var farAway = 6000;
+        var rect = new visual.Rectangle(farAway, farAway, webgl.GREEN_COLOR, 0.5);
+        var rightCorners = webgl.BLUE_COLOR;
+        var rightColors = [rightCorners.r, rightCorners.g, rightCorners.b, rightCorners.a];
+        for (i = 0; i < 4; i++) {
+            rect.colors[2 * 4 + i] = rightColors[i];
+            rect.colors[3 * 4 + i] = rightColors[i];
+        }
+        var background = new game.data.GameObject(null,
+            new phys.MotionBody(geom.Vector.ZERO, new phys.Rectangle(farAway, farAway), 0, 0),
+            rect);
+        background.setIsTransparent(true);
+        objects.push(background);
         this._scene.drawScene(this.getSceneCenter(), this.getCanvasSize(), this.getSceneSize().x,
-            objects, unwrapMesh, isObstacleChecker, unwrapPosition, unwrapCourse, frustums, lightPositions, lightRanges);
+            objects, unwrapMesh, isTransparentChecker, isAlwaysVisibleChecker, unwrapPosition, unwrapCourse, frustums, lightPositions, lightRanges);
     }
 
     var handlersHolder = new game.message.MessageHandlersHolder();

@@ -23,7 +23,8 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @param {number} sceneWidth
      * @param {Array.<T>} wrappers
      * @param {function(T):visual.TrianglesMesh} unwrapper
-     * @param {function(T):boolean} isObstacleChecker
+     * @param {function(T):boolean} isTransparentChecker
+     * @param {function(T):boolean} isAlwaysVisibleChecker
      * @param {function(T):geom.Vector} positionExtractor
      * @param {function(T):number} angleExtractor
      * @param {Array.<matrix.Matrix3>} lightsFrustums
@@ -31,12 +32,13 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @param {Array.<number>} lightRanges
      */
     visual.Scene.prototype.drawScene = function (sceneCenter, canvasSize, sceneWidth,
-                                                 wrappers, unwrapper, isObstacleChecker, positionExtractor, angleExtractor,
+                                                 wrappers, unwrapper, isTransparentChecker, isAlwaysVisibleChecker, positionExtractor, angleExtractor,
                                                  lightsFrustums, lightPositions, lightRanges) {
         var positionsArrays = [],
             indicesArrays = [],
             colorsArrays = [],
-            isObstacleMask = [],
+            isTransparentMask = [],
+            isAlwaysVisibleMask = [],
             pointsCount = 0,
             indicesCount = 0;
         wrappers.forEach(function (wrapper) {
@@ -49,59 +51,74 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             positionsArrays.push(positions);
             indicesArrays.push(indices);
             colorsArrays.push(colors);
-            isObstacleMask.push(isObstacleChecker(wrapper));
-            pointsCount += positions.length / 2;
+            isTransparentMask.push(isTransparentChecker(wrapper));
+            isAlwaysVisibleMask.push(isAlwaysVisibleChecker(wrapper));
+            pointsCount += positions.length / 3;
             indicesCount += indices.length;
         }, this);
-        var allPositions = new Float32Array(pointsCount * 2),
+        var allPositions = new Float32Array(pointsCount * 3),
             allIndices = new Uint16Array(indicesCount),
             allColors = new Float32Array(pointsCount * 4),
-            pointOffset = 0,
+            positionOffset = 0,
+            colorOffset = 0,
             indicesOffset = 0;
         for (var i = 0; i < positionsArrays.length; i++) {
             var positions = positionsArrays[i];
             var indices = indicesArrays[i];
             var colors = colorsArrays[i];
             for (var j = 0; j < positions.length; j++) {
-                allPositions[pointOffset * 2 + j] = positions[j];
+                allPositions[positionOffset + j] = positions[j];
             }
             for (j = 0; j < colors.length; j++) {
-                allColors[pointOffset * 4 + j] = colors[j];
+                allColors[colorOffset + j] = colors[j];
             }
             for (j = 0; j < indices.length; j++) {
-                allIndices[indicesOffset + j] = pointOffset + indices[j];
+                allIndices[indicesOffset + j] = positionOffset / 3 + indices[j];
             }
-            pointOffset += positions.length / 2;
+            positionOffset += positions.length;
+            colorOffset += colors.length;
             indicesOffset += indices.length;
         }
         if (lightsFrustums.length == 0) {
             webgl.drawShadowedTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors,
-                lightsFrustums, lightPositions, lightRanges, 1.0);
+                lightsFrustums, lightPositions, lightRanges, 0.5);
         } else {
-            pointOffset = 0;
+            positionOffset = 0;
             for (i = 0; i < positionsArrays.length; i++) {
                 positions = positionsArrays[i];
-                var isObstacle = isObstacleMask[i];
+                var isTransparent = isTransparentMask[i];
                 for (j = 0; j < positions.length; j++) {
-                    if (!isObstacle) {
-                        allPositions[pointOffset * 2 + j] = 0;
+                    if (isTransparent) {
+                        allPositions[positionOffset + j] = 0;
                     }
                 }
-                pointOffset += positions.length / 2;
+                positionOffset += positions.length;
             }
             webgl.renderShadows(allPositions, allIndices, lightsFrustums);
 
-            pointOffset = 0;
+            positionOffset = 0;
             for (i = 0; i < positionsArrays.length; i++) {
                 positions = positionsArrays[i];
-                isObstacle = isObstacleMask[i];
                 for (j = 0; j < positions.length; j++) {
-                    allPositions[pointOffset * 2 + j] = positions[j];
+                    allPositions[positionOffset + j] = positions[j];
                 }
-                pointOffset += positions.length / 2;
+                positionOffset += positions.length;
             }
             webgl.drawShadowedTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors,
                 lightsFrustums, lightPositions, lightRanges, 0.0);
+
+            positionOffset = 0;
+            for (i = 0; i < positionsArrays.length; i++) {
+                positions = positionsArrays[i];
+                var isAlwaysVisible = isAlwaysVisibleMask[i];
+                if (!isAlwaysVisible) {
+                    for (j = 0; j < positions.length; j++) {
+                        allPositions[positionOffset + j] = 0;
+                    }
+                }
+                positionOffset += positions.length;
+            }
+            webgl.drawTriangles(sceneCenter, canvasSize, sceneWidth, allPositions, allIndices, allColors, false);
         }
     };
 
@@ -117,7 +134,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
         util.assert(indices.length % 3 == 0);
         util.assert((util.maxInArray(indices) + 1) * 4 == colors.length);
         util.assert(util.minInArray(indices) == 0);
-        util.assert(positions.length * 4 == colors.length * 2);
+        util.assert(positions.length * 4 == colors.length * 3);
         this.positions = positions;
         this.indices = indices;
         this.colors = colors;
@@ -137,14 +154,13 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
     visual.TrianglesMesh.prototype.getPositions = function (offset, angle) {
         var positions = new Float32Array(this.positions);
         var rotation = matrix.Matrix3.rotation(angle);
-        for (var i = 0; i < positions.length; i++) {
-            var xy = rotation.translate(new geom.Vector(positions[i * 2 + 0], positions[i * 2 + 1]));
-            positions[i * 2 + 0] = xy.x;
-            positions[i * 2 + 1] = xy.y;
-        }
-        for (var j = 0; j < positions.length; j++) {
-            positions[j * 2 + 0] = positions[j * 2 + 0] + offset.x;
-            positions[j * 2 + 1] = positions[j * 2 + 1] + offset.y;
+        var translating = matrix.Matrix3.translation(offset.x, offset.y);
+        var transform = translating.dot(rotation);
+        for (var i = 0; 3 * i < this.positions.length; i++) {
+            var xy = transform.translate(new geom.Vector(this.positions[i * 3 + 0], this.positions[i * 3 + 1]));
+            positions[i * 3 + 0] = xy.x;
+            positions[i * 3 + 1] = xy.y;
+            positions[i * 3 + 2] = this.positions[i * 3 + 2];
         }
         return positions;
     };
@@ -169,10 +185,11 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
     /**
      * @param {number} radius
      * @param {webgl.Color} color
+     * @param {number=} z
      * @constructor
      * @extends {visual.TrianglesMesh}
      */
-    visual.Circle = function (radius, color) {
+    visual.Circle = function (radius, color, z) {
         /**
          * @const {number}
          */
@@ -182,17 +199,23 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
          */
         this.color = color;
 
+        if (z == null) {
+            z = 0.0;
+        }
+
         var pixels_perimeter = 2 * Math.PI * radius;
         var segments_count = Math.max(5, Math.round(pixels_perimeter / CIRCLE_EDGE_PIXEL_LENGTH));
         var vertices_count = segments_count + 1;
 
-        var positions = new Float32Array(vertices_count * 2);
+        var positions = new Float32Array(vertices_count * 3);
         var indices = new Uint16Array(segments_count * 3);
         positions[0] = 0;
         positions[1] = 0;
+        positions[2] = z;
         for (var i = 0; i < segments_count; i++) {
-            positions[(i + 1) * 2 + 0] = this.radius * Math.cos(2 * Math.PI * i / segments_count);
-            positions[(i + 1) * 2 + 1] = this.radius * Math.sin(2 * Math.PI * i / segments_count);
+            positions[(i + 1) * 3 + 0] = this.radius * Math.cos(2 * Math.PI * i / segments_count);
+            positions[(i + 1) * 3 + 1] = this.radius * Math.sin(2 * Math.PI * i / segments_count);
+            positions[(i + 1) * 3 + 2] = z;
             indices[i * 3 + 0] = 0;
             indices[i * 3 + 1] = i + 1;
             indices[i * 3 + 2] = 1 + (i + 1) % segments_count;
@@ -208,10 +231,11 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @param {number} radius
      * @param {webgl.Color} color
      * @param {number} removedAngle - in degrees (segment of circle, that will be empty)
+     * @param {number=} z
      * @constructor
      * @extends {visual.TrianglesMesh}
      */
-    visual.OrientedCircle = function (radius, color, removedAngle) {
+    visual.OrientedCircle = function (radius, color, removedAngle, z) {
         /**
          * @const {number}
          */
@@ -221,6 +245,10 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
          */
         this.color = color;
 
+        if (z == null) {
+            z = 0.0;
+        }
+
         removedAngle *= Math.PI / 180;
         var pixels_perimeter = (2 * Math.PI - removedAngle) * radius;
         var segments_count = Math.max(6, Math.round(pixels_perimeter / CIRCLE_EDGE_PIXEL_LENGTH));
@@ -229,16 +257,19 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
         }
         var vertices_count = segments_count + 2;
 
-        var positions = new Float32Array(vertices_count * 2);
+        var positions = new Float32Array(vertices_count * 3);
         var indices = new Uint16Array(segments_count * 3);
         positions[0] = 0;
         positions[1] = 0;
-        positions[2] = this.radius * Math.cos(removedAngle / 2.0);
-        positions[3] = this.radius * Math.sin(removedAngle / 2.0);
+        positions[2] = z;
+        positions[3] = this.radius * Math.cos(removedAngle / 2.0);
+        positions[4] = this.radius * Math.sin(removedAngle / 2.0);
+        positions[5] = z;
         for (var i = 0; i < segments_count; i++) {
             var angle = removedAngle / 2.0 + (2 * Math.PI - removedAngle) * (i + 1) / segments_count;
-            positions[(i + 2) * 2 + 0] = this.radius * Math.cos(angle);
-            positions[(i + 2) * 2 + 1] = this.radius * Math.sin(angle);
+            positions[(i + 2) * 3 + 0] = this.radius * Math.cos(angle);
+            positions[(i + 2) * 3 + 1] = this.radius * Math.sin(angle);
+            positions[(i + 2) * 3 + 2] = z;
             indices[i * 3 + 0] = 0;
             indices[i * 3 + 1] = i + 1;
             indices[i * 3 + 2] = i + 2;
@@ -253,10 +284,11 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
      * @param {number} width
      * @param {number} height
      * @param {webgl.Color} color
+     * @param {number=} z
      * @constructor
      * @extends {visual.TrianglesMesh}
      */
-    visual.Rectangle = function (width, height, color) {
+    visual.Rectangle = function (width, height, color, z) {
         /**
          * @const {number}
          */
@@ -270,11 +302,15 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
          */
         this.color = color;
 
+        if (z == null) {
+            z = 0.0;
+        }
+
         var positions = new Float32Array([
-            -width / 2, -height / 2,
-            -width / 2, height / 2,
-            width / 2, height / 2,
-            width / 2, -height / 2]);
+            -width / 2, -height / 2, z,
+            -width / 2, height / 2, z,
+            width / 2, height / 2, z,
+            width / 2, -height / 2, z]);
         var indices = new Uint16Array([
             0, 1, 2,
             0, 2, 3

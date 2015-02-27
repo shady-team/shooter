@@ -436,6 +436,7 @@ var WEB_GL_DEBUG = false;
     webgl.GREEN_BLUE_COLOR = new webgl.Color(0, 0.5, 0.5, 1.0);
     webgl.BLUE_COLOR = new webgl.Color(0, 0, 0.5, 1.0);
     webgl.BLACK_COLOR = new webgl.Color(0, 0, 0, 1.0);
+    webgl.YELLOW_COLOR = new webgl.Color(0.5, 0.5, 0, 1.0);
     webgl.LIGHT_BLUE_COLOR = new webgl.Color(0.53, 0.81, 0.94, 1.0);
     webgl.LIGHT_BROWN_COLOR = new webgl.Color(0.50, 0.28, 0.10, 1.0);
 
@@ -449,12 +450,13 @@ var WEB_GL_DEBUG = false;
      * @param {Float32Array} positions
      * @param {Uint16Array} indices
      * @param {Float32Array} colors
+     * @param {boolean} clearFrame
      */
-    webgl.drawTriangles = function (sceneCenter, canvasSize, sceneWidth, positions, indices, colors) {
+    webgl.drawTriangles = function (sceneCenter, canvasSize, sceneWidth, positions, indices, colors, clearFrame) {
         util.assert(indices.length % 3 == 0);
         util.assert((util.maxInArray(indices) + 1) * 4 == colors.length);
         util.assert(util.minInArray(indices) == 0);
-        util.assert(positions.length * 4 == colors.length * 2);
+        util.assert(positions.length * 4 == colors.length * 3);
 
         var glProgram = webgl.coloredPolygonProgram;
 
@@ -482,7 +484,7 @@ var WEB_GL_DEBUG = false;
 
         positionBuf.bind();
         gl.enableVertexAttribArray(glProgram.positionAttrib);
-        gl.vertexAttribPointer(glProgram.positionAttrib, 2, gl.FLOAT, false, 2 * 4, 0);
+        gl.vertexAttribPointer(glProgram.positionAttrib, 2, gl.FLOAT, false, 3 * 4, 0);
         positionBuf.unbind();
 
         colorBuf.bind();
@@ -490,13 +492,17 @@ var WEB_GL_DEBUG = false;
         gl.vertexAttribPointer(glProgram.colorAttrib, 4, gl.FLOAT, false, 4 * 4, 0);
         colorBuf.unbind();
 
-        gl.viewport(0, 0, webgl.width, webgl.height);
+        if (clearFrame) {
+            gl.viewport(0, 0, webgl.width, webgl.height);
 
-        gl.clearColor(0, 0, 0.1, 1);
-        gl.clearDepth(1.0);
+            gl.clearColor(0, 0, 0.1, 1);
+            gl.clearDepth(1.0);
 
-        gl.enable(gl.DEPTH_TEST);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        } else {
+            gl.disable(gl.DEPTH_TEST); // TODO: make this configurable or so
+        }
 
         indexBuf.bind();
         gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
@@ -513,7 +519,7 @@ var WEB_GL_DEBUG = false;
      */
     webgl.renderShadows = function (positions, indices, frustums) {
         util.assert(indices.length % 3 == 0);
-        util.assert((util.maxInArray(indices) + 1) * 2 == positions.length);
+        util.assert((util.maxInArray(indices) + 1) * 3 == positions.length);
         util.assert(util.minInArray(indices) == 0);
 
         var lightsCount = frustums.length;
@@ -521,23 +527,27 @@ var WEB_GL_DEBUG = false;
             return;
         }
 
-        var allPositions = new Float32Array(positions.length * lightsCount);
+        var allPositions = new Float32Array(positions.length * 2 / 3 * lightsCount);
         var allIndices = new Uint16Array(2 * indices.length * lightsCount);
-        var lightIndicies = new Float32Array(indices.length * lightsCount);
+        var lightIndices = new Float32Array(indices.length * lightsCount);
         for (var i = 0; i < lightsCount; i++) {
-            for (var j = 0; j < positions.length; j++) {
-                allPositions[i * positions.length + j] = positions[j];
+            for (var j = 0; 3 * j < positions.length; j++) {
+                allPositions[i * positions.length + 2 * j + 0] = positions[3 * j + 0];
+                allPositions[i * positions.length + 2 * j + 1] = positions[3 * j + 1];
             }
             for (j = 0; 3 * j < indices.length; j++) {
                 for (var k = 0; k < 3; k++) {
-                    allIndices[i * indices.length * 2 + 2 * 3 * j + k * 2 + 0] = i * positions.length + indices[3 * j + k];
-                    allIndices[i * indices.length * 2 + 2 * 3 * j + k * 2 + 1] = i * positions.length + indices[3 * j + ((k + 1) % 3)];
+                    allIndices[i * indices.length * 2 + 2 * 3 * j + k * 2 + 0] = i * (positions.length / 3) + indices[3 * j + k];
+                    allIndices[i * indices.length * 2 + 2 * 3 * j + k * 2 + 1] = i * (positions.length / 3) + indices[3 * j + ((k + 1) % 3)];
                 }
             }
             for (j = 0; j < indices.length; j++) {
-                lightIndicies[i * indices.length + j] = i;
+                lightIndices[i * indices.length + j] = i;
             }
         }
+        util.assert(allIndices.length % 6 == 0);
+        util.assert((util.maxInArray(allIndices) + 1) * 2 == allPositions.length);
+        util.assert(util.minInArray(allIndices) == 0);
 
         var glProgram = webgl.shadowCasterProgram;
 
@@ -554,7 +564,7 @@ var WEB_GL_DEBUG = false;
         positionBuf.unbind();
 
         lightIndexBuf.bind();
-        gl.bufferData(lightIndexBuf.target, lightIndicies, gl.DYNAMIC_DRAW);
+        gl.bufferData(lightIndexBuf.target, lightIndices, gl.DYNAMIC_DRAW);
         lightIndexBuf.unbind();
 
         gl.useProgram(glProgram);
@@ -612,60 +622,12 @@ var WEB_GL_DEBUG = false;
         util.assert(indices.length % 3 == 0);
         util.assert((util.maxInArray(indices) + 1) * 4 == colors.length);
         util.assert(util.minInArray(indices) == 0);
-        util.assert(positions.length * 4 == colors.length * 2);
+        util.assert(positions.length * 4 == colors.length * 3);
 
         var lightsCount = lightsFrustums.length;
         util.assert(lightsFrustums.length == lightsCount);
         util.assert(lightPositions.length == lightsCount);
         util.assert(lightRanges.length == lightsCount);
-
-        var addBackgroundRectangle = true;
-        if (addBackgroundRectangle) {
-            var newPositions = new Float32Array(3 * positions.length / 2 + 12);
-            var newIndices = new Uint16Array(indices.length + 6);
-            var newColors = new Float32Array(colors.length + 16);
-            for (var i = 0; 2 * i < positions.length; i++) {
-                newPositions[12 + 3 * i + 0] = positions[2 * i + 0];
-                newPositions[12 + 3 * i + 1] = positions[2 * i + 1];
-                newPositions[12 + 3 * i + 2] = -0.5;
-            }
-            for (i = 0; i < indices.length; i++) {
-                newIndices[6 + i] = 4 + indices[i];
-            }
-            for (i = 0; i < colors.length; i++) {
-                newColors[16 + i] = colors[i];
-            }
-            var farAway = 2600.0;
-            newPositions[0] = -farAway;
-            newPositions[1] = -farAway;
-            newPositions[2] = 0.5;
-            newPositions[3] = -farAway;
-            newPositions[4] = farAway;
-            newPositions[5] = 0.5;
-            newPositions[6] = farAway;
-            newPositions[7] = farAway;
-            newPositions[8] = 0.5;
-            newPositions[9] = farAway;
-            newPositions[10] = -farAway;
-            newPositions[11] = 0.5;
-            newIndices[0] = 0;
-            newIndices[1] = 1;
-            newIndices[2] = 2;
-            newIndices[3] = 0;
-            newIndices[4] = 2;
-            newIndices[5] = 3;
-            var backgroundColors = [
-                0, 1, 0, 1,
-                0, 1, 0, 1,
-                0, 0, 1, 1,
-                0, 0, 1, 1];
-            for (i = 0; i < backgroundColors.length; i++) {
-                newColors[i] = backgroundColors[i];
-            }
-            positions = newPositions;
-            indices = newIndices;
-            colors = newColors;
-        }
 
         var glProgram = webgl.shadowedPolygonProgram;
 
@@ -695,7 +657,7 @@ var WEB_GL_DEBUG = false;
         var rectToRect = matrix.Matrix3.rectToRect(
                 new geom.Rectangle(new geom.Vector(-1, -1), new geom.Vector(1, 1)),
                 new geom.Rectangle(new geom.Vector(0, -1), new geom.Vector(1, 1)));
-        for (i = 0; i < lightsCount; i++) {
+        for (var i = 0; i < lightsCount; i++) {
             gl.uniformMatrix3fv(glProgram.worldToLightDepthUniform[i], false, rectToRect.dot(lightsFrustums[i]).transpose().data);
             gl.uniform2f(glProgram.lightPosUniform[i], lightPositions[i].x, lightPositions[i].y);
             gl.uniform1f(glProgram.lightRangeUniform[i], lightRanges[i]);

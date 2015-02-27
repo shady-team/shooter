@@ -40,13 +40,13 @@ goog.require('game.logic');
 
         function rectangle(x0, y0, x1, y1) {
             return new game.data.GameObject(null, new phys.Body(new geom.Vector((x0 + x1) / 2, (y0 + y1) / 2),
-                new phys.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0)), Infinity), new visual.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0), webgl.BLACK_COLOR));
+                new phys.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0)), Infinity), new visual.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0), webgl.YELLOW_COLOR));
         }
 
         function glass(x0, y0, x1, y1) {
             var glass =  new game.data.GameObject(null, new phys.Body(new geom.Vector((x0 + x1) / 2, (y0 + y1) / 2),
                 new phys.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0)), Infinity), new visual.Rectangle(Math.abs(x1 - x0), Math.abs(y1 - y0), webgl.GLASS_COLOR));
-            glass.setIsObstacle(false);
+            glass.setIsTransparent(true);
             return glass;
         }
 
@@ -132,6 +132,9 @@ goog.require('game.logic');
             walls.push(rectangle(1.5 * a, 3.5 * a, 2.5 * a, 4.5 * a));
             walls.push(rectangle(-1.5 * a, 0.5 * a, -2.5 * a, -0.5 * a));
             walls.push(rectangle(1.5 * a, 0.5 * a, 2.5 * a, -0.5 * a));
+            walls.forEach(function(wall){
+                wall.setIsAlwaysVisible(true);
+            });
             return walls;
         }
 
@@ -142,6 +145,9 @@ goog.require('game.logic');
                 columns.push(rectangle(x, topLeftCorner.y + a, x + a, topLeftCorner.y + 2 * a));
                 columns.push(rectangle(x, topLeftCorner.y + 3 * a, x + a, topLeftCorner.y + 4 * a));
             }
+            columns.forEach(function(column){
+                column.setIsAlwaysVisible(true);
+            });
             return columns;
         }
 
@@ -366,7 +372,7 @@ goog.require('game.logic');
         function(message, id) {
             var player = this._map.getObject(message.playerObjectId);
             var bullet = player.createBullet();
-            bullet.setIsObstacle(false);
+            bullet.setIsTransparent(true);
             this._map.addObjects([bullet]);
             sendAll.call(this, new game.message.ObjectsCreationMessage([bullet]));
         }

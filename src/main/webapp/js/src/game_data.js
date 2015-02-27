@@ -29,7 +29,11 @@ game.data.ModificationsBatch;
         /**
          * @type {boolean}
          */
-        this.isObstacle = true;
+        this.isTransparent = false;
+        /**
+         * @type {boolean}
+         */
+        this.isAlwaysVisible = false;
         /**
          * @type {number}
          */
@@ -46,10 +50,17 @@ game.data.ModificationsBatch;
     };
 
     /**
-     * @param isObstacle
+     * @param {boolean} isTransparent
      */
-    game.data.GameObject.prototype.setIsObstacle = function(isObstacle) {
-        this.isObstacle = isObstacle;
+    game.data.GameObject.prototype.setIsTransparent = function(isTransparent) {
+        this.isTransparent = isTransparent;
+    };
+
+    /**
+     * @param {boolean} isAlwaysVisible
+     */
+    game.data.GameObject.prototype.setIsAlwaysVisible = function(isAlwaysVisible) {
+        this.isAlwaysVisible = isAlwaysVisible;
     };
 
     /**
