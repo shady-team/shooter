@@ -9,7 +9,15 @@ goog.require('events');
         /** @const */ E_ACCEPT = 'accept',
         /** @const */ E_REJECT = 'reject',
 
-        /** @const */ ICE_SERVERS = [{'url': "stun:stun.l.google.com:19302"}];
+        /** @const */ ICE_SERVERS = [
+            {'url': "stun:stun.l.google.com:19302"},
+            {'url': "stun:stun.services.mozilla.com"},
+            {
+                'url': "turn:numb.viagenie.ca",
+                'credential': "11235813",
+                'username': "pupkin@mailinator.com"
+            }
+        ];
 
     /**
      * @param {string} url
