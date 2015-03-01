@@ -89,7 +89,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
                 var isTransparent = isTransparentMask[i];
                 for (j = 0; j < positions.length; j++) {
                     if (isTransparent) {
-                        allPositions[positionOffset + j] = 0;
+                        allPositions[positionOffset + j] = 0;  // TODO: this logic should be more common (masking positions)
                     }
                 }
                 positionOffset += positions.length;
@@ -100,7 +100,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
             for (i = 0; i < positionsArrays.length; i++) {
                 positions = positionsArrays[i];
                 for (j = 0; j < positions.length; j++) {
-                    allPositions[positionOffset + j] = positions[j];
+                    allPositions[positionOffset + j] = positions[j];  // TODO: this logic should be more common (masking positions)
                 }
                 positionOffset += positions.length;
             }
@@ -113,7 +113,7 @@ var CIRCLE_EDGE_PIXEL_LENGTH = 5;
                 var isAlwaysVisible = isAlwaysVisibleMask[i];
                 if (!isAlwaysVisible) {
                     for (j = 0; j < positions.length; j++) {
-                        allPositions[positionOffset + j] = 0;
+                        allPositions[positionOffset + j] = 0;  // TODO: this logic should be more common (masking positions)
                     }
                 }
                 positionOffset += positions.length;

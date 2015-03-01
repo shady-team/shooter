@@ -23,7 +23,7 @@ goog.require('game.logic');
          * @private
          */
         this._map = new game.logic.Map([
-            new game.logic.Team('GreenTeam', 90, new geom.Rectangle(new geom.Vector(-1200, -300), new geom.Vector(1000, -100)), webgl.GREEN_COLOR),
+            new game.logic.Team('GreenTeam', 90, new geom.Rectangle(new geom.Vector(-1200, -300), new geom.Vector(-1000, -100)), webgl.GREEN_COLOR),
             new game.logic.Team('BlueTeam', 90, new geom.Rectangle(new geom.Vector(1000, -300), new geom.Vector(1200, -100)), webgl.BLUE_COLOR)
         ], constructMap());
         initServerEvents.call(this);
