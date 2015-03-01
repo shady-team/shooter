@@ -70,7 +70,7 @@ var WEB_GL_DEBUG = false;
         '    float z = cameraPosition.z;' +
         '    vDepth = y;' +
         '    zDepth = z;' +
-        '    gl_Position = vec4(x, z * (-1.0 + (lightIndexF)/float(LIGHTS_MAX - 1)), y, z);' +
+        '    gl_Position = vec4(x, z * (-1.0 + 2.0 * (0.5 + lightIndexF)/float(LIGHTS_MAX)), y, z);' +
         '}';
 
     var _shadowCasterFShader = '' +
@@ -151,7 +151,7 @@ var WEB_GL_DEBUG = false;
         '        float z = depthTexPos.z;' +
         '        if (x >= 0.0 && x <= 1.0*z && y >= -1.0*z && y <= 1.0*z) {' +
         '            float distFromLight = length(vPosition - lightPos[i]);' +
-        '            vec4 rgba = texture2D(depthTextures, vec2(x/z, (0.5 + float(i))/float(LIGHTS_MAX)));' +
+        '            vec4 rgba = texture2D(depthTextures, vec2(x/z, float(i)/float(LIGHTS_MAX-1)));' +
         '            float lightDepth = unpack(rgba);' +
         '            if (distFromLight <= lightRange[i] && y/z <= lightDepth) {' +
         '                float linearLight = 1.0 + distFromLight * (minLight - 1.0) / lightRange[i];' +
